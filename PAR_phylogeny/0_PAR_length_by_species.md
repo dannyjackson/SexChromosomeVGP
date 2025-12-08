@@ -28,8 +28,19 @@ module load R
 export TREE=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/roadies_v1.1.16b.nwk
 export ANN=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/annotations.tsv
 export BEDDIR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/PAR_annotations
+export SEXCHRLEN=VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
 
-Rscript ggplotTree_PARs.R mammals
+Rscript 0a_ggplotTree_PARs.R Birds
+Rscript 0a_ggplotTree_PARs.R Mammals
+Rscript 0a_ggplotTree_PARs.R Fishes
+Rscript 0a_ggplotTree_PARs.R Amphibians
+Rscript 0a_ggplotTree_PARs.R Reptiles
+
+Add * for we should look at it more
+Add X for nothing here at all
+
+
+
 ```
 All of these have complex sex chromosome systems. Sort out how to plot them such that there are two bars for these (at half the width).
 
@@ -49,7 +60,6 @@ Rscript ggplotTree_PARs.R birds
 ```
 
 Issues to clean up:
-1. The genomes with empty BED files are being ignored, which disrupts the alignment of PAR bar plots to the tree tips. Find a way to illustrate in the bar plot that they are empty.
 2. The genomes with complex sex chromosomes (i.e. X1X2) are skipping the latter and just using the former.
 3. Overlap between plots is imperfect and hiding tip labels.
 4. Add a version with ratio of PAR to entire sex chromosome (probably entire X/Z?)
