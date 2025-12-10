@@ -1,4 +1,4 @@
-# Vertebrate PAR lengths
+# Vertebrate PAR lengths testing
 This script creates plots demonstrating the length of pseudoautosomal regions (PARs) across vertebrate clades using VGP data from the 2025 data freeze.
 
 *Created: December 3rd, 2025* <br>
