@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 
 # Usage:
-#   Rscript plot_Z_repeats_bar.R Z_TE_BED 87715099 out.png
+#   Rscript 2x_plot_Z_repeats_bar.R Z_TE_BED 87715099 out.png
 #
 # Example:
 #   Rscript plot_Z_repeats_bar.R "$Z_TE_BED" 87715099 Z_repeats_bar.png
