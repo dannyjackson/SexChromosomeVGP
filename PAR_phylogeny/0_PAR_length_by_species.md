@@ -63,3 +63,48 @@ Issues to clean up:
 2. The genomes with complex sex chromosomes (i.e. X1X2) are skipping the latter and just using the former.
 3. Overlap between plots is imperfect and hiding tip labels.
 4. Add a version with ratio of PAR to entire sex chromosome (probably entire X/Z?)
+
+
+Why isn't ostrich in it?
+Are the Xs technical or biological?
+Spot check neosex chromosomes -- at minimum star the Neosex
+  See Simone's annotation of the
+Rather than PAR ratio, add size of the Y
+Violin plot across species of PAR ratios in major groupings
+Is the Y annotated for each of these? 
+Add length of Y and add color of sequencing technology
+Add whether there is a telomere
+Standardize 
+Potentially add length of non-PAR X/Z as stacked gray
+Important to 
+
+
+## Investigating issues, December 15th
+# Which species have more than one bed file and why?
+``` ls | awk -F '_' '{print $1,$2}' ```
+
+These have more than one bed file:
+```
+Artibeus intermedius # Y1toX and Y2toX
+Artibeus lituratus # Y1toX and Y2toX
+Canis lupus # two subspecies -- baileyi and orion
+Hoplias malabaricus # YtoX1 and YtoX2
+Hypanus sabinus # YtoX1 and YtoX2
+Pongo abelii # fastatofasta.aln and YtoX
+Pongo pygmaeus # fastatofasta.aln and YtoX
+Pseudorca crassidens # fastatofasta.aln and YtoX
+Rhynchocyon petersi # YchromtoXchrom and YtoX
+```
+The fastatofasta.aln and YchromotoXchrom files are duplicates
+
+Sort each PAR file
+Collect the value that is the distance between the end of one region and the next
+Make a histogram of these distances
+Identify a cutoff from the histogram that can be used to separate PARs on each end of the chromosome
+Write it up as both a methods section and a protocol on github
+
+Synteny Pipeline
+1. Go through list of neo sex column 
+1a. Identify list(s) of genomes that we care about
+2. Liftover annotations to unannotated genomes of interest
+3. Engage Adrian 
