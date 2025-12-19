@@ -77,6 +77,36 @@ Rscript ../2x_plot_chr_repeats_bar.R $W_TE_BED 56726463 W.TE.png
 
 
 R
+
+auto <- read.table("autosomes.TEbp.50kb.bed",
+                   col.names=c("chr","start","end","TEbp"))
+Z <- read.table("W.TEbp.50kb.bed",
+                col.names=c("chr","start","end","TEbp"))
+
+auto$prop <- auto$TEbp / 50000
+Z$prop <- Z$TEbp / 50000
+
+wilcox.test(Z$prop, auto$prop, alternative="less")
+
+# windowed test
+null <- auto$prop
+
+Z$p_empirical <- sapply(Z$prop, function(x) mean(null <= x))
+Z$padj <- p.adjust(Z$p_empirical, method="fdr")
+sig_Z <- subset(Z, padj < 0.05)
+
+combined <- c(Z$prop, auto$prop)
+labels <- c(rep("Z", length(Z$prop)), rep("A", length(auto$prop)))
+
+obs <- mean(Z$prop) - mean(auto$prop)
+
+perm <- replicate(10000, {
+  l <- sample(labels)
+  mean(combined[l=="Z"]) - mean(combined[l=="A"])
+})
+
+mean(perm <= obs)
+
 # Plot it all
 library(ggplot2)
 
@@ -111,10 +141,10 @@ p1 <- ggplot(Z, aes(x = mb, y = prop)) +
   geom_point(aes(shape = sig), size = 1.6, alpha = 0.8) +
   geom_hline(yintercept = median(auto$prop, na.rm = TRUE), linetype = 2) +
   labs(
-    x = "Position on Z (Mb)",
+    x = "Position on W (Mb)",
     y = "TE proportion per 50 kb window",
     shape = "FDR < 0.05",
-    title = "TE density along Z (50 kb windows)",
+    title = "TE density along W (50 kb windows)",
     subtitle = sprintf(
       "Global depletion permutation p = %.3g; dashed line = autosomal median",
       p_perm
@@ -123,7 +153,7 @@ p1 <- ggplot(Z, aes(x = mb, y = prop)) +
   theme_classic()
 
 ggsave(
-  filename = "Z_TE_density_50kb.png",
+  filename = "W_TE_density_50kb.png",
   plot = p1,
   width = 10,
   height = 4,
@@ -138,16 +168,16 @@ p2 <- ggplot(Z, aes(x = mb, y = mlog10_fdr)) +
   geom_point(aes(shape = sig), size = 1.6, alpha = 0.8) +
   geom_hline(yintercept = -log10(0.05), linetype = 2) +
   labs(
-    x = "Position on Z (Mb)",
+    x = "Position on W (Mb)",
     y = expression(-log[10]("FDR")),
     shape = "FDR < 0.05",
-    title = "Windows with significantly low TE density on Z",
+    title = "Windows with significantly low TE density on W",
     subtitle = "Dashed line = FDR 0.05 threshold"
   ) +
   theme_classic()
 
 ggsave(
-  filename = "Z_TE_depletion_FDR_50kb.png",
+  filename = "W_TE_depletion_FDR_50kb.png",
   plot = p2,
   width = 10,
   height = 4,
