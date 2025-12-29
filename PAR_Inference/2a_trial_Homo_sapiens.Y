@@ -7,23 +7,42 @@ mkdir -p /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_infe
 cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_inference/TEs/Homo_sapiens/Y
 # Homo sapiens
 
-BEDDIR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/TE_annotations
+TE_BEDDIR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/TE_annotations
+ALIGN_BEDDIR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/PAR_annotations
 META_FILE=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/reference_lists/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
 
-mkdir -p ${BEDDIR}/sex_chrs
-zcat ${BEDDIR}/Homo_sapiens_GCA_009914755.4.repMask.out.bed.gz | grep 'chrY'  > ${BEDDIR}/sex_chrs/Homo_sapiens.GCA_009914755.4.TE.Y.bed
-zcat ${BEDDIR}/Homo_sapiens_GCA_009914755.4.repMask.out.bed.gz | grep 'chrX' > ${BEDDIR}/sex_chrs/Homo_sapiens.GCA_009914755.4.TE.X.bed
+mkdir -p ${TE_BEDDIR}/sex_chrs
+zcat ${TE_BEDDIR}/Homo_sapiens_GCA_009914755.4.repMask.out.bed.gz | grep 'chrY'  > ${TE_BEDDIR}/sex_chrs/Homo_sapiens.GCA_009914755.4.TE.Y.bed
+zcat ${TE_BEDDIR}/Homo_sapiens_GCA_009914755.4.repMask.out.bed.gz | grep 'chrX' > ${TE_BEDDIR}/sex_chrs/Homo_sapiens.GCA_009914755.4.TE.X.bed
 
-Y_TE_BED=${BEDDIR}/sex_chrs/Homo_sapiens.GCA_009914755.4.TE.Y.bed
+Y_TE_BED=${TE_BEDDIR}/sex_chrs/Homo_sapiens.GCA_009914755.4.TE.Y.bed
 
+# subset Y bed from alignment bed
+mkdir -p /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/alignment_sexchr_beds
+ALIGN_BEDDIR_SEXCHR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/alignment_sexchr_beds
+awk 'BEGIN{OFS="\t"} {print $1,$2,$3}' ${ALIGN_BEDDIR}/Homo_sapiens_YtoX.aln.id98_5.len10k.refqry.bed > ${ALIGN_BEDDIR_SEXCHR}/Homo_sapiens.chrY.bed
 
-Rscript 2x_plot_chr_repeats_bar.R $Y_TE_BED par.Y.bed 62460029 Y.TE.png
+Y_ALIGN_BED=${ALIGN_BEDDIR_SEXCHR}/Homo_sapiens.chrY.bed
+sed -i 's/NC_060948.1/chrY/g' ${Y_ALIGN_BED}
+
+Rscript 2x_par_align_TE_plot.R par.Y.bed ${Y_TE_BED} ${Y_ALIGN_BED} 62460029 Y_par_align_TE.png
 
 chrY	0	2458320
 chrY	62122809	62460029
 
 
 
+# test alignment parameters
+srun ~/minimap2-2.28_x64-linux/minimap2 \
+  -x asm5 \
+  -k 21 -w 15 \
+  -m 300 -s 200 \
+  --secondary=no \
+  -c --eqx \
+  -t 3 \
+  ${species_name}.${small_chr}chrom.fasta \
+  ${species_name}.${big_chr}chrom.fasta \
+  > /scratch/sgable3/WGA_Benchmarking/minimap2/PAR_analysis/${species_name}_${small_chr}to${big_chr}.aln.paf
 
 
 
