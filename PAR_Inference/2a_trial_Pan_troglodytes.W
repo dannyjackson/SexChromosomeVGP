@@ -1,38 +1,41 @@
 # Inferring PAR from TE
-# Calonectris_borealis W chromosome
-# OZ122107.1
+# Pan troglodytes W chromosome
+# NC_072422.2 or 	CM054458.2
 # 56726463 bp long
 
-cd /scratch/dnjacks4/TE_PAR_Inference/analyses/spot_test/Calonectris_borealis/W
-# Calonecteris borealis
+cd /scratch/dnjacks4/TE_PAR_Inference/analyses/spot_test/Pan_troglodytes/Y
 
 BEDDIR=/scratch/sgable3/VGP_Projects/RepMask_out/RepMasker_BEDs/
 META_FILE=/scratch/dnjacks4/TE_PAR_Inference/reference_lists/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
 
-grep 'OZ122107.1' ${BEDDIR}/Calonectris_borealis_GCA_964195595.2.repMask.out.bed > /scratch/dnjacks4/TE_PAR_Inference/datafiles/Calonectris_borealis.GCA_964195595.2.TE.W.bed
+TE_BED=/scratch/dnjacks4/TE_PAR_Inference/datafiles/Pan_troglodytes_GCF_028858775.2.TE.autosomes.bed
+Y_TE_BED=/scratch/dnjacks4/TE_PAR_Inference/datafiles/Pan_troglodytes_GCF_028858775.2.TE.Y.bed
 
-W_TE_BED=/scratch/dnjacks4/TE_PAR_Inference/datafiles/Calonectris_borealis.GCA_964195595.2.TE.W.bed
+grep 'NC_072422.2' ${BEDDIR}/Pan_troglodytes_GCF_028858775.2.repMask.out.bed \
+  > $Y_TE_BED
+
+grep -v 'NC_072422.2' ${BEDDIR}/Pan_troglodytes_GCF_028858775.2.repMask.out.bed | grep -v 'NC_072421.2' > $TE_BED
 
 # Autosomes
 awk 'BEGIN{OFS="\t"} {print $1, $2, $3, $3-$2}' "$TE_BED" > autosomes.te.bed
 
-# W chromosome
-awk 'BEGIN{OFS="\t"} {print $1, $2, $3, $3-$2}' "$W_TE_BED" > W.te.bed
+# Y chromosome
+awk 'BEGIN{OFS="\t"} {print $1, $2, $3, $3-$2}' "$Y_TE_BED" > Y.te.bed
 
 
 # --------------------------
-# W windows (your approach)
+# Y windows (your approach)
 # --------------------------
-echo -e 'OZ122107.1\t56726463' > wchrom.size
-bedtools makewindows -g wchrom.size -w 50000 > W.50kb.bed
+echo -e 'NC_072422.2\t36447294' > ychrom.size
+bedtools makewindows -g ychrom.size -w 10000 > Y.10kb.bed
 
-bedtools intersect -a W.50kb.bed -b W.te.bed -wa -wb |
+bedtools intersect -a Y.10kb.bed -b Y.te.bed -wa -wb |
   awk 'BEGIN{OFS="\t"} {print $1,$2,$3,$7}' |
-  bedtools groupby -g 1,2,3 -c 4 -o sum > W.TEbp.50kb.bed
+  bedtools groupby -g 1,2,3 -c 4 -o sum > Y.TEbp.10kb.bed
 
 # Add zero-TE W windows
-bedtools intersect -a W.50kb.bed -b W.TEbp.50kb.bed -v |
-  awk 'BEGIN{OFS="\t"} {print $1,$2,$3,0}' >> W.TEbp.50kb.bed
+bedtools intersect -a Y.10kb.bed -b Y.TEbp.10kb.bed -v |
+  awk 'BEGIN{OFS="\t"} {print $1,$2,$3,0}' >> Y.TEbp.10kb.bed
 
 
 # ------------------------------------------
@@ -72,120 +75,63 @@ bedtools intersect -a autosomes.50kb.bed -b autosomes.te.bed -wa -wb |
 bedtools intersect -a autosomes.50kb.bed -b autosomes.TEbp.50kb.bed -v |
   awk 'BEGIN{OFS="\t"} {print $1,$2,$3,0}' >> autosomes.TEbp.50kb.bed
 
-Rscript ../2x_plot_chr_repeats_bar.R $W_TE_BED 56726463 W.TE.png
+Rscript ../../Calonectris_borealis/2x_plot_chr_repeats_bar.R $Y_TE_BED 36447294 Y.TE.png
 
 
 
-R
+scp "dnjacks4@login.sol.rc.asu.edu:/scratch/dnjacks4/TE_PAR_Inference/analyses/spot_test/Pan_troglodytes/Y/*.png" .
 
-auto <- read.table("autosomes.TEbp.50kb.bed",
-                   col.names=c("chr","start","end","TEbp"))
-Z <- read.table("W.TEbp.50kb.bed",
-                col.names=c("chr","start","end","TEbp"))
 
-auto$prop <- auto$TEbp / 50000
-Z$prop <- Z$TEbp / 50000
-
-wilcox.test(Z$prop, auto$prop, alternative="less")
-
-# windowed test
-null <- auto$prop
-
-Z$p_empirical <- sapply(Z$prop, function(x) mean(null <= x))
-Z$padj <- p.adjust(Z$p_empirical, method="fdr")
-sig_Z <- subset(Z, padj < 0.05)
-
-combined <- c(Z$prop, auto$prop)
-labels <- c(rep("Z", length(Z$prop)), rep("A", length(auto$prop)))
-
-obs <- mean(Z$prop) - mean(auto$prop)
-
-perm <- replicate(10000, {
-  l <- sample(labels)
-  mean(combined[l=="Z"]) - mean(combined[l=="A"])
-})
-
-mean(perm <= obs)
-
-# Plot it all
+library(readr)
+library(dplyr)
 library(ggplot2)
 
-# ---------------------------
-# Prep (same as before)
-# ---------------------------
-null <- auto$prop
-Z$p_empirical <- sapply(Z$prop, function(x) mean(null <= x))
-Z$padj <- p.adjust(Z$p_empirical, method="fdr")
-Z$sig <- Z$padj < 0.05
-
-combined <- c(Z$prop, auto$prop)
-labels <- c(rep("Z", length(Z$prop)), rep("A", length(auto$prop)))
-obs <- mean(Z$prop) - mean(auto$prop)
-
-set.seed(1)
-perm <- replicate(10000, {
-  l <- sample(labels)
-  mean(combined[l=="Z"]) - mean(combined[l=="A"])
-})
-p_perm <- mean(perm <= obs)
-
-Z$mid <- (Z$start + Z$end) / 2
-Z$mb  <- Z$mid / 1e6
-Z$mlog10_fdr <- -log10(pmax(Z$padj, 1e-300))
-
-# ---------------------------
-# Plot 1: TE proportion along Z
-# ---------------------------
-p1 <- ggplot(Z, aes(x = mb, y = prop)) +
-  geom_line(alpha = 0.25) +
-  geom_point(aes(shape = sig), size = 1.6, alpha = 0.8) +
-  geom_hline(yintercept = median(auto$prop, na.rm = TRUE), linetype = 2) +
-  labs(
-    x = "Position on W (Mb)",
-    y = "TE proportion per 50 kb window",
-    shape = "FDR < 0.05",
-    title = "TE density along W (50 kb windows)",
-    subtitle = sprintf(
-      "Global depletion permutation p = %.3g; dashed line = autosomal median",
-      p_perm
-    )
-  ) +
-  theme_classic()
-
-ggsave(
-  filename = "W_TE_density_50kb.png",
-  plot = p1,
-  width = 10,
-  height = 4,
-  units = "in",
-  dpi = 300
+# bed: chr  start  end  TEbp
+df <- read_tsv(
+  "Y.TEbp.10kb.bed",
+  col_names = c("chr", "start", "end", "TEbp"),
+  col_types = cols(
+    chr   = col_character(),
+    start = col_double(),
+    end   = col_double(),
+    TEbp  = col_double()
+  )
 )
 
-# ---------------------------------
-# Plot 2: significance along Z (FDR)
-# ---------------------------------
-p2 <- ggplot(Z, aes(x = mb, y = mlog10_fdr)) +
-  geom_point(aes(shape = sig), size = 1.6, alpha = 0.8) +
-  geom_hline(yintercept = -log10(0.05), linetype = 2) +
+# optional: pick one chromosome if multiple present
+# df <- df %>% filter(chr == "NC_072422.2")
+
+df <- df %>%
+  arrange(chr, start) %>%
+  mutate(
+    pos_mb = start / 1e6,
+    TE_kb  = TEbp / 1e3
+  )
+
+df_step <- df %>%
+  group_by(chr) %>%
+  arrange(start, .by_group = TRUE) %>%
+  reframe(
+    pos_mb = c(start/1e6, max(end)/1e6),
+    TE_kb  = c(TEbp/1e3, last(TEbp)/1e3)
+  )
+
+step_plot <- ggplot(df_step, aes(pos_mb, TE_kb)) +
+  geom_step(direction = "hv", linewidth = 0.6) +
+  theme_classic() +
+  labs(x = "Position (Mb)", y = "TE bp per 10 kb window (kb)") +
+  facet_wrap(~ chr, scales = "free_x")
+
+ggsave("Y.10kb.te.png", step_plot, width = 10, height = 5)
+
+step_plot_zoom <- ggplot(df_step, aes(pos_mb, TE_kb)) +
+  geom_step(direction = "hv", linewidth = 0.6) +
+  theme_classic() +
   labs(
-    x = "Position on W (Mb)",
-    y = expression(-log[10]("FDR")),
-    shape = "FDR < 0.05",
-    title = "Windows with significantly low TE density on W",
-    subtitle = "Dashed line = FDR 0.05 threshold"
+    x = "Position (Mb)",
+    y = "TE bp per 50 kb window (kb)"
   ) +
-  theme_classic()
+  facet_wrap(~ chr, scales = "free_x") +
+  coord_cartesian(ylim = c(0, 50), xlim = c(0,2.5))
 
-ggsave(
-  filename = "W_TE_depletion_FDR_50kb.png",
-  plot = p2,
-  width = 10,
-  height = 4,
-  units = "in",
-  dpi = 300
-)
-
-
-scp "dnjacks4@login.sol.rc.asu.edu:/scratch/dnjacks4/TE_PAR_Inference/analyses/spot_test/Calonectris_borealis/W/*.png" .
-
-
+ggsave("Y.10kb.te.zoom.png", step_plot_zoom, width = 10, height = 5)
