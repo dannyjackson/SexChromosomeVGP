@@ -2,7 +2,7 @@ library(ggplot2)
 library(dplyr)
 library(readr)
 library(tidyr)
-
+# /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/align_PAR_99thr
 # ------------------------------------------------------------
 # Input files
 # ------------------------------------------------------------

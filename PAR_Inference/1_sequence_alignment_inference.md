@@ -8,7 +8,7 @@ Simone performed the alignment -- add in her code here.
 ### Join contiguous regions at either end of the sex chromosomes
 The above code output a collection of bedfiles, found here:
 ```
-export BEDDIR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/PAR_annotations
+export BEDDIR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/align_PAR_99thr/align_PAR_inference
 ```
 There should be only one bed per genome. To confirm, I ran the following:
 
@@ -55,9 +55,8 @@ Fix errors in bed file names. Fringilla is misnammed, two copies of the Tammar w
 
 one misnamed bed file and remove a file made in error:
 ```
-mv sorted_beds/Fringilla_coelebs_YtoX.aln.id98_5.len10k.refqry.bed sorted_beds/Fringilla_coelebs_WtoZ.aln.id98_5.len10k.refqry.bed
-rm sorted_beds/PAR_job_list.txt.id98_5.len10k.refqry.bed 
-rm sorted_beds/Notamacropus_eugenii_YtoX.aln.id98_5.len10k.refqry.bed
+mv sorted_beds/Fringilla_coelebs_YtoX.aln.id99.len10k.refqry.bed sorted_beds/Fringilla_coelebs_WtoZ.aln.id99.len10k.refqry.bed
+rm sorted_beds/Notamacropus_eugenii_YtoX.aln.id99.len10k.refqry.bed
 
 ```
 
