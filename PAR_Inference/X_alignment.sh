@@ -1,6 +1,6 @@
 # Simone's code for PAR inference via alignment
 
-srun ~/minimap2-2.28_x64-linux/minimap2 -x asm5 -c --eqx  -t 3 ${species_name}.${small_chr}chrom.fasta ${species_name}.${big_chr}chrom.fasta \
+srun ~/minimap2-2.28_x64-linux/minimap2 -x asm5 -c --eqx -k 23 -t 3 ${species_name}.${small_chr}chrom.fasta ${species_name}.${big_chr}chrom.fasta \
  > /scratch/sgable3/WGA_Benchmarking/minimap2/PAR_analysis/${species_name}_${small_chr}to${big_chr}.aln.paf
 
 
