@@ -9,12 +9,12 @@
 2. **All_Sex_Chr**: Does the genome contain all sex chromosomes?
     * No: Done (assume PAR was not inferred).
     * Yes: Next.
-3. **Annotated_PAR_XZ**: Does the genome have an annotated PAR?
-    * No: Done.
-    * Yes: Next.
-4. **Annotated_PAR_YW**: Is the PAR also annotated on the sex-limited chromosome (Y or W)?
-    * No.
-    * Yes.
+3. **PAR_alignment**: Does the genome have a PAR inferred from alignment?
+    * No: Add to df, next.
+    * Yes: Add boundaries to df (for both XZ and YW chrs), next.
+4. **PAR_depth**: Does the genome have a PAR inferred from halfdeep?
+    * No: Add to df, done.
+    * Yes: Add boundaries to df(for both XZ and YW chrs), done.
 
 ### Output table:
 
@@ -34,13 +34,12 @@ All_Sex_Chr | Hetergametic_Sequenced
 
 ## Which methods can be used to infer PAR boundaries given the data in the genome?
 1. Does it have all sex chromosome?
-    * Yes: Sequence alignment, TE analysis, halfdeep, and kmers
-    * No: Only TE analysis
+    * Yes: Sequence alignment, halfdeep, and kmers
+    * No: Nucleotide diversity, maybe?
 
 
 
-## No published genomes have this data readily accessible.
-### It has been computed for the primate genomes. It does not appear to be in the NCBI database, however.
-| Genome | ... | Annotated_PAR_XZ | Annotated_PAR_YW |
-| --- | --- | --- | --- |
-| [Accession #] | ... | Y / N | Y / N | 
+## Note also whether our boundary inferences align with published boundaries in primates
+| Genome | ... | PAR_alignment_XZ | PAR_alignment_YW | PAR_depth_XZ | PAR_depth_YW |
+| --- | --- | --- | --- | --- | --- |
+| [Accession #] | ... | None / start:stop | None / start:stop | None / start:stop | None / start:stop | 
