@@ -55,7 +55,7 @@ Fix errors in bed file names. Fringilla is misnammed, two copies of the Tammar w
 
 one misnamed bed file and remove a file made in error:
 ```
-mv sorted_beds/Fringilla_coelebs_YtoX.aln.id99.len10k.refqry.bed sorted_beds/Fringilla_coelebs_WtoZ.aln.id99.len10k.refqry.bed
+mv sorted_beds/Fringilla_coelebs_WtoZ.aln.id99.len10k.refqry.bed sorted_beds/Tamandua_tetradactyla_YtoX.aln.id99.len10k.refqry.bed
 rm sorted_beds/Notamacropus_eugenii_YtoX.aln.id99.len10k.refqry.bed
 
 ```
@@ -98,6 +98,27 @@ Genomes that did not match:
 | Pongo_pygmaeus | NC_072396.2 | CM054653.2 | Is refseq chrom, just missing from metadata file | Nothing - is fine |
 | Sus_scrofa | CM060728.1 | CM107810.1 | CM107810 is in T2T_pig on ncbi with corresponding GCA and is 137,020,761 bp ; CM060728 is a different genome on NCBI and is 135,116,946 bp (https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_030704935.2/) | ? |
 
+cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/
+mv Fringilla_coelebs_YtoX.aln.paf Tamandua_tetradactyla_YtoX.aln.paf
+mv Notamacropus_eugenii_YtoX.aln.paf Macropus_eugenii_YtoX.aln.paf
+mkdir -p junk_continuous_percentID
+mv Bos_taurus_YtoX.aln.paf junk_continuous_percentID/
+mv Dama_dama_YtoX.aln.paf junk_continuous_percentID/
+mv Lycaon_pictus_YtoX.aln.paf junk_continuous_percentID/
+
+mv Pongo_abelii_fastatofasta.aln.paf junk_continuous_percentID/
+mv Pongo_pygmaeus_fastatofasta.aln.paf junk_continuous_percentID/
+mv Pseudorca_crassidens_fastatofasta.aln.paf junk_continuous_percentID
+mv Rhynchocyon_petersi_YchromtoXchrom.aln.paf junk_continuous_percentID/
+
+mv Monodelphis_domestica_YtoX.aln.paf junk_continuous_percentID/
+grep -v 'NW_' junk_continuous_percentID/Monodelphis_domestica_YtoX.aln.paf > Monodelphis_domestica_YtoX.aln.paf
+
+cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/continuous_percentID
+mv Fringilla_coelebs_YtoX.aln.paf Tamandua_tetradactyla_YtoX.aln.paf
+mv Pongo_abelii_fastatofasta.aln.refqry.csv ../junk_continuous_percentID/
+mv Pongo_pygmaeus_fastatofasta.aln.refqry.csv ../junk_continuous_percentID/
+mv Pseudorca_crassidens_fastatofasta.aln.refqry.csv ../junk_continuous_percentID
 # Next steps (don't do this)
  - Identify all bed files with regions on only one half of the chromosome. 
     - If the regions are closer to start of the chromosome, and then output a new bed file to dir Dir/one_PAR that is just chr start to highest end pos in region file. 

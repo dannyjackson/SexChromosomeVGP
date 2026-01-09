@@ -116,3 +116,23 @@ Rscript 2x_par_align_TE_plot.R CHM13v2.0_PAR.chrY.bed ${Y_TE_BED} BEDs/Homo_sapi
 
 
 # Modifying Simone's threshold cutoff from 0.985 to 0.99 recoups the boundary almost exactly. There are now more gaps, but the end bp of region 1 is identical to the boundary on the CHM13 github (2458320 on Y; 2394410 on X). I can rerun this really easily on all the pafs on Sol really easily so hopefully the results look more clear afterwards
+
+
+
+# Why is Eu.. misaligned?
+
+awk -v thr=0.99 -v minlen=10000 -v OFS='\t' '
+  function ident_from_de(de){ return (de=="" ? -1 : 1.0 - de) }
+  function ident_from_core(m,a){ return (a>0 ? m/a : -1) }
+  {
+    # PAF fields:
+    # 1 qname 2 qlen 3 qstart 4 qend 5 strand 6 tname 7 tlen 8 tstart 9 tend 10 nmatch 11 alnlen 12 mapq
+    tspan = $9 - $8
+    de=""; for(i=13;i<=NF;i++) if($i ~ /^de:f:/){ split($i,x,":"); de=x[3]; break }
+    id = ident_from_de(de); if (id < 0) id = ident_from_core($10,$11)
+
+    if (id >= thr && tspan >= minlen)
+      printf "%s\t%d\t%d\t%s\t%d\t%d\t%.4f\t%d\n", $6, $8, $9, $1, $3, $4, id*100, tspan
+  }
+' "/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/Eudromia_elegans_WtoZ.aln.paf" | wc -l
+> BEDs/Homo_sapiens_Y_to_X.aln.k23.id98_5.len10k.refqry.bed

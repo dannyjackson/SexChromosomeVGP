@@ -19,6 +19,7 @@ December 15th I downloaded the main tab of the google sheet "VGP_list_sex_chroms
 It is stored in this GitHub repository in Datafiles/VGP_OrdinalList_Phase1Freeze_v1.1_sex_chroms_seqCov_HalfDeep_SCINKD_May8.25_DwnldDec16.25.csv
 
 ### Subset the datafile to only the columns relevant to this analysis:
+I organized my thoughts regarding which data to keep from the "VGP_OrdinalList_Phase1Freeze_v1" csv file 
 
 ```
 cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/

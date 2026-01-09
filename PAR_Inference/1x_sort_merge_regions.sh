@@ -12,7 +12,7 @@ while read -r bed; do
     base=$(basename "$bed")
 
     awk 'BEGIN{OFS="\t"} {print $4, $5, $6}' "$bed" \
-        | sort -k4,4 -k5,5n -k6,6n \
+        | sort -k1,1 -k2,2n -k3,3n \
         | awk '
             BEGIN {OFS="\t"}
             NR==1 {
