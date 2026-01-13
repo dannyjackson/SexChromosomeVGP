@@ -208,6 +208,86 @@ n_rows <- length(levels(dt$y_label))
 species_y <- dt[, .(y_tip = mean(y)), by = species]
 species_y[, species := as.character(species)]
 
+
+# Output plotting dataframe to file
+# ============================================================
+# Write surviving regions table (Species,Start,Stop)
+# ============================================================
+write_surviving_regions <- function(
+  dt,
+  outfile,
+  coord = c("qry", "ref"),
+  merge_gap = 0L
+) {
+  coord <- match.arg(coord)
+
+  # drop placeholder/non-alignments + any NA coords
+  d <- copy(dt)
+  d <- d[chrom_pair != "NO_ALIGNMENTS"]
+  if (nrow(d) == 0) {
+    fwrite(data.table(Species = character(), Start = integer(), Stop = integer()),
+           outfile, sep = ",")
+    message("Wrote (empty): ", outfile)
+    return(invisible(NULL))
+  }
+
+  # pick coordinate system
+  if (coord == "qry") {
+    d[, `:=`(Start = as.integer(pmin(qs, qe)),
+             Stop  = as.integer(pmax(qs, qe)))]
+  } else {
+    d[, `:=`(Start = as.integer(pmin(rs, re)),
+             Stop  = as.integer(pmax(rs, re)))]
+  }
+
+  d <- d[!is.na(species) & !is.na(Start) & !is.na(Stop) & Stop > Start]
+
+  # merge intervals within species
+  setorder(d, species, Start, Stop)
+
+  merged <- d[, {
+    s <- Start
+    e <- Stop
+
+    out_s <- integer(0)
+    out_e <- integer(0)
+
+    cur_s <- s[1]
+    cur_e <- e[1]
+
+    if (length(s) > 1) {
+      for (i in 2:length(s)) {
+        if (s[i] <= (cur_e + merge_gap)) {
+          cur_e <- max(cur_e, e[i])
+        } else {
+          out_s <- c(out_s, cur_s)
+          out_e <- c(out_e, cur_e)
+          cur_s <- s[i]
+          cur_e <- e[i]
+        }
+      }
+    }
+
+    out_s <- c(out_s, cur_s)
+    out_e <- c(out_e, cur_e)
+
+    .(Start = out_s, Stop = out_e)
+  }, by = .(Species = as.character(species))]
+
+  fwrite(merged, outfile, sep = ",")
+  message("Wrote surviving regions: ", outfile,
+          " | species: ", uniqueN(merged$Species),
+          " | rows: ", nrow(merged),
+          " | coord: ", coord)
+  invisible(merged)
+}
+
+out_tbl_qry <- sprintf("surviving_regions.qry.thr%s.len%d.csv", thr_tag, min_aln)
+out_tbl_ref <- sprintf("surviving_regions.ref.thr%s.len%d.csv", thr_tag, min_aln)
+
+write_surviving_regions(dt, out_tbl_qry, coord = "qry", merge_gap = 0L)
+write_surviving_regions(dt, out_tbl_ref, coord = "ref", merge_gap = 0L)
+
 # ----------------------------
 # Build chromosome outline boxes for Query / Reference
 # ----------------------------

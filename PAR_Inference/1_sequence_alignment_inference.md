@@ -115,10 +115,14 @@ mv Monodelphis_domestica_YtoX.aln.paf junk_continuous_percentID/
 grep -v 'NW_' junk_continuous_percentID/Monodelphis_domestica_YtoX.aln.paf > Monodelphis_domestica_YtoX.aln.paf
 
 cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/continuous_percentID
-mv Fringilla_coelebs_YtoX.aln.paf Tamandua_tetradactyla_YtoX.aln.paf
+mv Fringilla_coelebs_YtoX.refqry.csv Tamandua_tetradactyla_YtoX.aln.refqry.csv
 mv Pongo_abelii_fastatofasta.aln.refqry.csv ../junk_continuous_percentID/
 mv Pongo_pygmaeus_fastatofasta.aln.refqry.csv ../junk_continuous_percentID/
 mv Pseudorca_crassidens_fastatofasta.aln.refqry.csv ../junk_continuous_percentID
+
+mv Monodelphis_domestica_YtoX.aln.refqry.csv ../junk_continuous_percentID/
+grep -v 'NW_' ../junk_continuous_percentID/Monodelphis_domestica_YtoX.aln.refqry.csv > Monodelphis_domestica_YtoX.aln.refqry.csv
+
 # Next steps (don't do this)
  - Identify all bed files with regions on only one half of the chromosome. 
     - If the regions are closer to start of the chromosome, and then output a new bed file to dir Dir/one_PAR that is just chr start to highest end pos in region file. 
