@@ -22,11 +22,7 @@ tree_file <- "/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelis
 
 
 thr <- 98.5
-# min_aln <- 10000
-# min_aln <- 100000  
-# min_aln <- 50000  
-min_aln <- 20000
-min_aln <- 10000
+min_aln <- 50000
 
 thr_tag <- gsub("\\.", "p", sprintf("%.1f", thr))  # "98p5"
 
@@ -129,16 +125,28 @@ tr <- ladderize(tr)
 
 # Parse species ID from file_label:
 # default: first two underscore-separated tokens => Genus_species
-get_species <- function(x) {
+tipset <- unique(tr$tip.label)
+
+get_species <- function(x, tipset) {
   parts <- strsplit(x, "_", fixed = TRUE)[[1]]
-  if (length(parts) >= 2) {
-    paste(parts[1], parts[2], sep = "_")
+
+  # cumulative prefixes
+  prefs <- vapply(seq_along(parts), function(k) paste(parts[1:k], collapse = "_"), character(1))
+
+  # keep only those that exist in the tree tips
+  hits <- prefs[prefs %in% tipset]
+
+  if (length(hits) > 0) {
+    hits[length(hits)]              # longest match
+  } else if (length(parts) >= 2) {
+    paste(parts[1], parts[2], sep = "_")  # fallback
   } else {
     x
   }
 }
 
-dt[, species := vapply(as.character(file_label), get_species, character(1))]
+dt[, species := vapply(as.character(file_label), get_species, character(1), tipset = tipset)]
+
 
 # --- after: dt[, species := ...]
 library(ape)
@@ -438,7 +446,7 @@ p <- (p_tree | p_qry | p_ref) +
 height_in <- max(20, n_rows * 0.09)
 
 out_png <- sprintf(
-  "continuous_percentID.ALLFILES.with_tree_and_chr_boxes.thr%s.len%d.2.png",
+  "continuous_percentID.ALLFILES.with_tree_and_chr_boxes.thr%s.len%d.png",
   thr_tag,
   min_aln
 )
