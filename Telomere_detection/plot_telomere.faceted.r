@@ -1,5 +1,5 @@
 library(tidyverse)
-
+library(ragg)
 base_dir <- "/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/Telomere_detection/sexchrs/tidk_results"
 
 cat("Starting telomere plot generation\n")
@@ -98,6 +98,14 @@ p <- ggplot(df_long, aes(x = window, y = count, color = direction)) +
     strip.text.x = element_text(angle = 90),
     panel.spacing = unit(0.2, "lines")
   )
+
+ggsave(
+  filename = "telomere_counts.png",
+  plot = p,
+  device = ragg::agg_png,
+  width = 18, height = 10, units = "in",
+  dpi = 150   # start lower
+)
 
 out_file <- "all_species_all_chr_telomere_counts.png"
 

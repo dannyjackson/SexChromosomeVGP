@@ -206,7 +206,7 @@ echo 'Canis_lupus,X,NC_132876.1' >> sexchrom_accessions.csv
 echo 'Canis_lupus,Y,NC_132877.1' >> sexchrom_accessions.csv
 ```
 ## 3. Subset out each sex chromosome from each fasta
-
+```
 SEXCHRFILE="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/sexchrom_accessions.csv"
 OUTDIR="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/sex_chrs"
 
@@ -224,24 +224,26 @@ tail -n +2 "${SEXCHRFILE}" | while IFS=, read -r SPECIES SEXCHR ACCESSION; do
     echo "Extracting ${SPECIES} ${SEXCHR}"
     samtools faidx "${FASTA}" "${CHROM}" > "${OUT}"
 done
-
+```
 
 ## 4. Use the Telomere Identification toolKit (tidk) to annotate telomeres on each sex chromosome (https://github.com/tolkit/telomeric-identifier)
+```
+FASTADIR="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/sex_chrs"
+OUTDIR="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/Telomere_detection/sexchrs/tidk_results"
 
-
-OUTDIR="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/sex_chrs"
-
-for FA in "${OUTDIR}"/*.fa; do
+mkdir -p "${OUTDIR}"
+    
+for FA in "${FASTADIR}"/*.fa; do
     BASENAME=$(basename "${FA}" .fa)   # SPECIES.SEXCHR
-    mkdir -p "${BASENAME}"
+    SPECIES="${BASENAME%%.*}"          # text before first dot
 
     echo "Running TIDK on ${FA}"
     tidk search "${FA}" \
         --string TTAGGG \
         --output "${BASENAME}" \
-        --dir "${BASENAME}"
+        --dir "${OUTDIR}"/"${SPECIES}"
 done
-
+```
 
 
 # 
@@ -262,11 +264,18 @@ FASTA=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/genomes/Ho
 tidk search $FASTA --string TTAGGG --output CHM13_Xchr --dir Homo_sapiens
 
 
-
-
-head /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
-mkdir -p /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/sex_chrs/
-samtools faidx $FASTA -r $CHROM > /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/sex_chrs/$SPECIES.[SEXCHR].fa
-
-
 ## 5. Visualize the data for each sex chromosome
+```
+#!/bin/bash
+
+module load R
+
+cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/Telomere_detection/sexchrs/tidk_results
+
+Rscript plot_telomere.faceted.r
+
+```
+
+sbatch plot_telomere.faceted.sh
+
+9583517
