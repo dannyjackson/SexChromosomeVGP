@@ -137,7 +137,9 @@ Run this to create a TSV with columns "Species,Chromosome,Accession"
 export TSV=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
 export GENOMEDIR=/data/Wilson_Lab/data/VGP_genomes
 
-bash make_sexchrom_accessions.sh sexchrom_accessions.csv
+GITREP="~/dannys_githubs/SexChromosomeVGP/"
+
+bash $GITREPO/make_sexchrom_accessions.sh $OUTDIR/sexchrom_accessions.csv
 ```
 Some values were missing from this, due to mismatch between the VGP seq reports accession numbers and the version of fasta in our genome directory:
 ```
