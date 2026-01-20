@@ -64,3 +64,42 @@ ggsave(
   height = 4,
   dpi = 300
 )
+
+
+
+Xchr <- ggplot(hap1_bed, aes(x=start)) +
+  geom_histogram(data = hap1_bed,  aes(x = start, y =  after_stat(density)), color = "#5F00F6", fill = "black", alpha = 0.8, binwidth=1e6) +
+  ggtitle("Kmer Density of X chr (masked Y)") +
+  xlab("Position on chromosome") + 
+  ylab("Kmer density") + 
+  theme_bw()
+
+out_file <- "kmer_masked.Xchr.1M.png"
+
+ggsave(
+  out_file,
+  plot = Xchr,
+  width = 8,
+  height = 4,
+  dpi = 300
+)
+
+
+
+
+Xchr <- ggplot(hap1_bed, aes(x=start)) +
+  geom_histogram(data = hap1_bed,  aes(x = start, y =  after_stat(density)), color = "#5F00F6", fill = "black", alpha = 0.8, binwidth=500000) +
+  ggtitle("Kmer Density of X chr (masked Y)") +
+  xlab("Position on chromosome") + 
+  ylab("Kmer density") + 
+  theme_bw()
+
+out_file <- "kmer_masked.Xchr.500k.png"
+
+ggsave(
+  out_file,
+  plot = Xchr,
+  width = 8,
+  height = 4,
+  dpi = 300
+)
