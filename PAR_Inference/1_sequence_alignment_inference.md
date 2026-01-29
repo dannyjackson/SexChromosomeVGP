@@ -145,7 +145,10 @@ If there are ones that remain... messy.
     Ran half deep on every chromosome of every genome if 
 
 
-
+Rscript X_continuous_identity_plotting.r
+Rscript X_continuous_identity_plotting.thresholds.r
+Rscript X_continuous_identity_plotting.tech.r
+Rscript X_AlignmentTech.r
 
 
 

@@ -128,19 +128,7 @@ echo "Done."
 ```
 
 # 1. Run SCINKD
-SPECIES_LIST="cetacean.species.txt"
-
-while IFS= read -r SPECIES; do
-    [[ -z "$SPECIES" ]] && continue
-    [[ "${SPECIES:0:1}" == "#" ]] && continue
-
-    sbatch scinkd_submit.cetaceans.sh -s "$SPECIES"
-done < "$SPECIES_LIST"
-
-
-./run_cetaceans_scinkd.sh
-
-Run the following using slurm:
+Save the following as scinkd_submit.cetaceans.sh:
 ```
 #!/bin/bash
 #SBATCH -J runscinkd_cetaceans
@@ -175,11 +163,27 @@ snakemake --use-conda -c "${SLURM_CPUS_PER_TASK:-1}" \
     -s /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/SCINKD_PAR_dropout/SCINKD/SCINKD.v2.1.0.GREEDY.snakefile \
     --configfile /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/SCINKD_PAR_dropout/cetaceans/${SPECIES}/config.${SPECIES}.json --printshellcmds --show-failed-logs
 ```
-
+Run it as a slurm array:
 ```
-sbatch scinkd_submit.cetaceans.sh -s ${SPECIES}
+SPECIES_LIST="cetacean.species.txt"
+
+while IFS= read -r SPECIES; do
+    [[ -z "$SPECIES" ]] && continue
+    [[ "${SPECIES:0:1}" == "#" ]] && continue
+
+    sbatch scinkd_submit.cetaceans.sh -s "$SPECIES"
+done < "$SPECIES_LIST"
 ```
 Plot it:
 ```
-Rscript plot_kmer_density.r -s ${SPECIES}
+
+while IFS= read -r SPECIES; do
+    [[ -z "$SPECIES" ]] && continue
+    [[ "${SPECIES:0:1}" == "#" ]] && continue
+
+OUTDIR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/SCINKD_PAR_dropout/cetaceans/$SPECIES
+
+Rscript plot_kmer_density.r -s "$SPECIES" -o "$OUTDIR"
+done < "$SPECIES_LIST"
+
 ```
