@@ -129,3 +129,53 @@ mv ../genomes/*csv .
 ```
 awk -F',' '$3=="N"{print $1}' genome_file_summary.csv > species_requiring_lifted_gff.txt
 ```
+# Create a list of FNA files
+```
+echo -e "Species\tAccession\tFNA" > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv
+
+find . -mindepth 5 -maxdepth 5 -type f -name "*_genomic.fna" \
+| sort -t/ -k2,2 -k5,5V \
+| awk -F/ '
+{
+  species = $2
+  accession = $5
+  fna = $0
+}
+# keep only the last (highest-version) entry per species
+species != prev && NR > 1 {
+  print prev_species "\t" prev_accession "\t" prev_fna
+}
+{
+  prev = species
+  prev_species = species
+  prev_accession = accession
+  prev_fna = fna
+}
+END {
+  if (NR > 0) print prev_species "\t" prev_accession "\t" prev_fna
+}
+' \
+| while read -r species accession fna; do
+    fullpath=$(readlink -f "$fna")
+    echo -e "${species}\t${accession}\t${fullpath}"
+  done >> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv
+
+```
+### Recreate data structure for Genespace using symlinks
+```
+ln -s target_file_or_directory link_name
+
+cd /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/
+
+tail -n +2 /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv \
+| while read -r species accession fna; do
+    mkdir -p "${species}"
+    ln -sf "${fna}" "${species}/${species}.fna"
+done
+
+tail -n +2 /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/gff_file_list.tsv \
+| while read -r species accession gff; do
+    mkdir -p "${species}"
+    ln -sf "${gff}" "${species}/${species}.gff"
+done
+```
