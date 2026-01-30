@@ -34,6 +34,18 @@ Xenarthra Dasypus_novemcinctus
 ```
 # run lifton
 ```
+#!/usr/bin/env bash
+#SBATCH --job-name=vgp_dl
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=20G
+#SBATCH --time=12:00:00
+#SBATCH --output=slurm_logs/vgp_dl_%A_%a.out
+#SBATCH --error=slurm_logs/vgp_dl_%A_%a.err
+
+source myconda
+
+conda activate lifton
+
 # input tables
 REFERENCE_FILE="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/VGP_OrdinalList_Phase1Freeze_v1.2_Sept.30.2025_sex_chrs_HalfDeep_SCINKD.csv"
 
@@ -52,7 +64,7 @@ FNA_QRY=/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Trichechus_inunguis/ncb
 SC=0.5
 
 lifton \
-    -g lifton_refdb/human_refseq_gcf009914755.db \
+    -g ${GFF_REF} \
     -o ${GFF_QRY} \
     -P ${FAA_REF} \
     -t 2 \

@@ -73,6 +73,9 @@ done
 set +u
 
 echo "Wrote $OUT"
+
+mv genome_file_summary.csv ../reference_lists/
+
 ```
 ### Check if all genomes downloaded an fna:
 ```
@@ -109,9 +112,9 @@ find . -mindepth 2 -maxdepth 2 -type f -name "*.zip" -delete
 
 # Create a list of GFF files
 ```
-cd /data/Wilson_Lab/data/VGP_genomes_phase1/
+cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 
-mkdir -p reference_lists 
+mkdir -p ../reference_lists 
 
 echo -e "Species\tAccession\tGFF" > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/gff_file_list.tsv
 
@@ -121,50 +124,68 @@ find . -mindepth 5 -maxdepth 5 -type f -name "*.gff" | while read -r gff; do
   fullpath=$(readlink -f "$gff")
   echo -e "${species}\t${accession}\t${fullpath}"
 done >> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/gff_file_list.tsv
-
-mv ../genomes/*tsv .
-mv ../genomes/*csv .
 ```
 # Create a list of species lacking GFF files
 ```
+cd ../reference_lists
 awk -F',' '$3=="N"{print $1}' genome_file_summary.csv > species_requiring_lifted_gff.txt
+```
+# Compare and make sure that all species are represented in the "Has GFF" vs "Needs GFF" lists
+```
+
+LIST1="genome_file_summary.csv"
+LIST2="/data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/gff_file_list.tsv"
+LIST3="species_requiring_lifted_gff.txt"
+
+# Extract species names
+cut -d',' -f1 "$LIST1" | tail -n +2 | sort > list1.species
+awk '{print $1}' "$LIST2" | sort > list2.species
+sort "$LIST3" > list3.species
+
+echo "=== Species in LIST1 missing from gff_file_list.tsv ==="
+comm -23 list1.species list2.species > needs_gff.txt
+
+echo
+echo "=== Species in LIST1 missing from species_requiring_lifted_gff.txt ==="
+comm -23 needs_gff.txt list3.species
+comm -23 list3.species needs_gff.txt
+
+# Cleanup
+rm list1.species list2.species list3.species needs_gff.txt
 ```
 # Create a list of FNA files
 ```
 echo -e "Species\tAccession\tFNA" > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv
 
 find . -mindepth 5 -maxdepth 5 -type f -name "*_genomic.fna" \
-| sort -t/ -k2,2 -k5,5V \
 | awk -F/ '
 {
   species = $2
-  accession = $5
+  acc = $5
   fna = $0
-}
-# keep only the last (highest-version) entry per species
-species != prev && NR > 1 {
-  print prev_species "\t" prev_accession "\t" prev_fna
-}
-{
-  prev = species
-  prev_species = species
-  prev_accession = accession
-  prev_fna = fna
-}
-END {
-  if (NR > 0) print prev_species "\t" prev_accession "\t" prev_fna
+  # parse acc like GCA_009914755.4 -> prefix=GCA, id=009914755, ver=4
+  if (match(acc, /^(GC[AF])_([0-9]+)\.([0-9]+)$/, m)) {
+    prefix = m[1]
+    id = m[2] + 0      # numeric id
+    ver = m[3] + 0     # numeric version
+    # prefer GCA (pref=0) over GCF (pref=1)
+    pref = (prefix=="GCA" ? 0 : 1)
+  } else {
+    id = 0; ver = 0; pref = 2
+  }
+  # emit tab-separated sortable record:
+  # species, id, ver, pref, accession, fna
+  printf("%s\t%010d\t%06d\t%d\t%s\t%s\n", species, id, ver, pref, acc, fna)
 }
 ' \
-| while read -r species accession fna; do
-    fullpath=$(readlink -f "$fna")
-    echo -e "${species}\t${accession}\t${fullpath}"
-  done >> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv
+| sort -t$'\t' -k1,1 -k2,2n -k3,3nr -k4,4n \
+| awk -F'\t' '!seen[$1]++ { print $1 "\t" $5 "\t" $6 }' \
+>> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv
+
 
 ```
 ### Recreate data structure for Genespace using symlinks
 ```
-ln -s target_file_or_directory link_name
-
 cd /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/
 
 tail -n +2 /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv \
@@ -178,4 +199,19 @@ tail -n +2 /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/gff_file_lis
     mkdir -p "${species}"
     ln -sf "${gff}" "${species}/${species}.gff"
 done
+```
+
+Remove all empty directories:
+```
+find /data/Wilson_Lab/data/VGP_genomes_phase1/genomes \
+     -type d -empty -delete
+```
+
+### Download alternate haplotypes
+```
+cd /data/Wilson_Lab/data/VGP_genomes_phase1/Alternate_Haplotypes
+
+ACCESSION_LIST="/data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/VGP_Phase1_Alternate_Haplotype_Accessions.csv"
+N=$(( $(wc -l < "$ACCESSION_LIST") - 1 ))
+sbatch --array=1-"$N"%25 download_vgp_array.althap.sh
 ```
