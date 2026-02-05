@@ -155,34 +155,77 @@ rm list1.species list2.species list3.species needs_gff.txt
 ```
 # Create a list of FNA files
 ```
-echo -e "Species\tAccession\tFNA" > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv
+cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 
-find . -mindepth 5 -maxdepth 5 -type f -name "*_genomic.fna" \
+out=/data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv
+echo -e "Species\tAccession\tFNA" > "$out"
+
+find "${PWD}" -mindepth 5 -maxdepth 5 -type f -name "GC*_genomic.fna" \
 | awk -F/ '
 {
-  species = $2
-  acc = $5
+  for (i=1; i<=NF; i++) {
+    if ($i == "genomes") {
+      species = $(i+1)
+      acc     = $(i+4)
+      break
+    }
+  }
+
   fna = $0
-  # parse acc like GCA_009914755.4 -> prefix=GCA, id=009914755, ver=4
+
+  # parse acc like GCA_009914755.4 or GCF_009914755.4
   if (match(acc, /^(GC[AF])_([0-9]+)\.([0-9]+)$/, m)) {
     prefix = m[1]
-    id = m[2] + 0      # numeric id
-    ver = m[3] + 0     # numeric version
-    # prefer GCA (pref=0) over GCF (pref=1)
-    pref = (prefix=="GCA" ? 0 : 1)
+    id  = m[2] + 0
+    ver = m[3] + 0
+
+    # Prefer GCF repository: rank 0 for GCF, 1 for GCA
+    # (smaller rank sorts first)
+    rank = (prefix=="GCF" ? 0 : 1)
   } else {
-    id = 0; ver = 0; pref = 2
+    id = 0; ver = 0; rank = 9
   }
-  # emit tab-separated sortable record:
-  # species, id, ver, pref, accession, fna
-  printf("%s\t%010d\t%06d\t%d\t%s\t%s\n", species, id, ver, pref, acc, fna)
+
+  # key fields:
+  # species, id, ver (desc), rank (GCF first), then acc, fna
+  printf("%s\t%010d\t%06d\t%d\t%s\t%s\n",
+         species, id, ver, rank, acc, fna)
 }
 ' \
-| sort -t$'\t' -k1,1 -k2,2n -k3,3nr -k4,4n \
+| sort -t$'\t' -k1,1 -k4,4n -k2,2n -k3,3nr \
 | awk -F'\t' '!seen[$1]++ { print $1 "\t" $5 "\t" $6 }' \
->> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/fna_file_list.tsv
+>> "$out"
 
+```
+# Create a list of protein files
+```
+cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 
+mkdir -p ../reference_lists 
+
+echo -e "Species\tAccession\tFAA" > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/faa_file_list.tsv
+
+find . -mindepth 5 -maxdepth 5 -type f -name "protein.faa" | while read -r faa; do
+  species=$(echo "$faa" | cut -d/ -f2)
+  accession=$(echo "$faa" | cut -d/ -f5)
+  fullpath=$(readlink -f "$faa")
+  echo -e "${species}\t${accession}\t${fullpath}"
+done >> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/faa_file_list.tsv
+```
+# Create a list of cds files
+```
+cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
+
+mkdir -p ../reference_lists 
+
+echo -e "Species\tAccession\tCDS" > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/cds_file_list.tsv
+
+find . -mindepth 5 -maxdepth 5 -type f -name "cds_from_genomic.fna" | while read -r cds; do
+  species=$(echo "$cds" | cut -d/ -f2)
+  accession=$(echo "$cds" | cut -d/ -f5)
+  fullpath=$(readlink -f "$cds")
+  echo -e "${species}\t${accession}\t${fullpath}"
+done >> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/cds_file_list.tsv
 ```
 ### Recreate data structure for Genespace using symlinks
 ```
@@ -198,6 +241,18 @@ tail -n +2 /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/gff_file_lis
 | while read -r species accession gff; do
     mkdir -p "${species}"
     ln -sf "${gff}" "${species}/${species}.gff"
+done
+
+tail -n +2 /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/faa_file_list.tsv \
+| while read -r species accession faa; do
+    mkdir -p "${species}"
+    ln -sf "${faa}" "${species}/${species}.faa"
+done
+
+tail -n +2 /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/cds_file_list.tsv \
+| while read -r species accession cds; do
+    mkdir -p "${species}"
+    ln -sf "${cds}" "${species}/${species}.cds"
 done
 ```
 

@@ -1,0 +1,38 @@
+name: genespace
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base=4.4
+  - r-devtools
+  - r-tidyverse
+  - r-data.table
+  - r-igraph
+  - r-magrittr
+  - r-ggplot2
+  - r-ggrepel
+  - r-patchwork
+  - r-cowplot
+  - r-reshape2
+  - r-dplyr
+  - r-stringr
+  - r-purrr
+  - r-readr
+  - r-rmarkdown
+  - r-knitr
+  - r-cairo
+  - r-rcolorbrewer
+  - r-scales
+  - r-circlize
+  - bioconductor-genomicranges
+  - bioconductor-iranges
+  - bioconductor-s4vectors
+  - bioconductor-rtracklayer
+  - blast
+  - diamond
+  - mafft
+  - mcl
+  - bedtools
+  - samtools
+  - orthofinder=2.5.5
+  - mcscanx
