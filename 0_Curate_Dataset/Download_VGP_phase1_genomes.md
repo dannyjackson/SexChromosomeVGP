@@ -1,40 +1,137 @@
 # Download all VGP Phase 1 genomes
 
-### Using the list of accession numbers in the VGP_list_sex_chroms_curated file, download all genomes and annotation files from the VGP phase 1 datafreeze
-This script uses the "Accession_num_main_haplotype" column in the reference datasheet, which is in format GCA_*. It preferrentially pulls RefSeq files by dropping GCA and using GCF first, but will fall back on GCA files if no GCF match is found.
+## Using the list of accession numbers in the VGP_list_sex_chroms_curated file, dentify latest GCF and GCA versions of all genomes
+```
+ACCESSION_LIST="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/VGP_OrdinalList_Phase1Freeze_v1.2_Sept.30.2025_sex_chrs_HalfDeep_SCINKD.csv"
+
+mamba activate ncbi_datasets   # or wherever datasets is installed
+chmod +x make_latest_gca_gcf_csv.sh
+./make_latest_gca_gcf_csv.sh $ACCESSION_LIST > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv
+
+head $ACCESSION_LIST
+head /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv
+```
+### Check which species are in the VGP list but didn't make it to the list of latest accessions
+```
+export ACCESSION_LIST=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/VGP_OrdinalList_Phase1Freeze_v1.2_Sept.30.2025_sex_chrs_HalfDeep_SCINKD.csv
+python - "$ACCESSION_LIST" <<'PY'
+import csv, sys
+
+file1 = sys.argv[1]
+file2 = "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv"
+
+def read_set(path, col, transform=lambda s: s):
+    with open(path, newline="") as f:
+        r = csv.DictReader(f)
+        if col not in r.fieldnames:
+            raise SystemExit(f"{path}: missing column '{col}'. Columns: {r.fieldnames}")
+        out = set()
+        for row in r:
+            v = (row.get(col) or "").strip()
+            if v:
+                out.add(transform(v))
+        return out
+
+# File1 has spaces in Scientific.Name (e.g., "Squalus sukleyi")
+s1 = read_set(file1, "Scientific.Name")
+
+# File2 has underscores in Species (e.g., "Squalus_sukleyi") -> convert to spaces
+s2 = read_set(file2, "Species", transform=lambda s: s.replace("_", " "))
+
+missing = sorted(s1 - s2)
+print("\n".join(missing))
+print(f"\n# Missing: {len(missing)} (Scientific.Name in file1 not in file2)")
+PY
+
+```
+These did not make it, which is expected -- they lack an accession in the datasheet and are not part of this freeze.
+```
+Aechmophorus clarkii
+Datnioides microlepis
+Pelodiscus sinensis
+Pelomedusa somalica
+Rhinoderma darwinii
+Squalus suckleyi
+Tenrec ecaudatus
+```
+### Check which species made it to the latest accessions but do not have a "latest accession"
+```
+awk -F',' 'NR==1{print; next} $2=="" && $3=="" {print $1 ",,"}' \
+  /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv
+```
+These are all missing the latest accession:
+```
+Species,Accession_GCF,Accession_GCA
+Saccopteryx_bilineata,,
+Saccopteryx_leptura,,
+Artibeus_lituratus,,
+Artibeus_intermedius,,
+Hoplias_malabaricus,,
+Hypanus_sabinus,,
+Lepisosteus_oculatus,,
+Acridotheres_tristis,,
+Zootoca_vivipara,,
+```
+Save the following as the file "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/did_not_run.csv" 
+```
+Species,Accession_GCF,Accession_GCA
+Saccopteryx_bilineata,GCF_036850995.1,
+Saccopteryx_leptura,GCF_036850765.1,
+Artibeus_lituratus,,GCA_038363095.4
+Artibeus_intermedius,,GCA_038363145.1
+Hoplias_malabaricus,GCF_029633855.1,
+Hypanus_sabinus,GCF_030144855.1,
+Lepisosteus_oculatus,GCF_040954835.1,
+Acridotheres_tristis,,GCA_027559615.1
+Zootoca_vivipara,GCF_963506605.1,
+```
+Then run the following:
+```
+chmod +x download_vgp_array.troubleshoot.sh
+./download_vgp_array.troubleshoot.sh
+```
+## Download all genomes and annotation files from the most recent GCF (preferred) or, if no GCF exists, most recent GCA
+```
+N=$(( $(wc -l < /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv) - 1 ))
+
+sbatch --array=1-"$N"%25 download_vgp_array.sh
+```
+### Some inevitably fail, due to pinging NCBI too many times. Run the following to catch it up:
+```
+head -n 1 /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/did_not_run.csv
+for sp in */; do
+  sp="${sp%/}"
+  if ! find "$sp" -type f -name '*.fna' \
+        ! -name 'cds_from_genomic.fna' ! -name 'rna.fna' \
+        ! -path '*/cds_from_genomic*' \
+        -print -quit | grep -q .; then
+    grep "$sp" /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv >> /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/did_not_run.csv
+  fi
+done
+
+chmod +x download_vgp_array.troubleshoot.sh
+./download_vgp_array.troubleshoot.sh
+```
+#### Check progress and confirm output
+```
+find . -type f -name '*.fna' | grep -v 'cds_from_genomic' | grep -v 'rna.fna' | wc -l
+
+find . -type f -name '*.gff' | wc -l
+
+find . -type f -name '*.zip' | wc -l
+
+ls -d */ | wc -l
+
+```
+## Download the Western Chorus Frog
 ```
 cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 
-ACCESSION_LIST="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/VGP_OrdinalList_Phase1Freeze_v1.2_Sept.30.2025_sex_chrs_HalfDeep_SCINKD.csv"
-N=$(( $(wc -l < "$ACCESSION_LIST") - 1 ))
-sbatch --array=1-"$N"%25 download_vgp_array.sh
+echo 'Species,Accession_GCF,Accession_GCA' > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/did_not_run.csv
+echo 'Pseudacris_triseriata,,GCA_053478255.1' >> /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/did_not_run.csv
+./download_vgp_array.troubleshoot.sh
 ```
-### Merge log files
-```
-jobid=10389948  # your array job id
-GENOME_DIR="/data/Wilson_Lab/data/VGP_genomes_phase1"
-
-# OK
-{
-  printf "Scientific.Name\tAccessionUsed\tZip\n"
-  awk 'FNR>1 { print }' "${GENOME_DIR}/download_ok.${jobid}."*.tsv
-} > "${GENOME_DIR}/download_ok.${jobid}.tsv"
-
-# FAIL
-
-{
-  printf "Scientific.Name\tAccessionUsed\tZip\n"
-  awk 'FNR>1 { print }' "${GENOME_DIR}/download_fail.${jobid}."*.tsv
-} > "${GENOME_DIR}/download_fail.${jobid}.tsv"
-
-wc -l download_ok.${jobid}.tsv
-wc -l download_fail.${jobid}.tsv
-
-# clear out individual jobid output files 
-
-rm download_ok.${jobid}.*.tsv
-rm download_fail.${jobid}.*.tsv
-```
+## Create reference files about downloads (e.g. paths to fna files)
 ### Create summary file of genomes with sequence and annotation files
 ```
 set -u
@@ -77,40 +174,29 @@ echo "Wrote $OUT"
 mv genome_file_summary.csv ../reference_lists/
 
 ```
-### Check if all genomes downloaded an fna:
+### Use this for some quick data confirmations and cleaning
+#### Confirm that all genome directories contain an fna:
 ```
-grep 'N,N,N' genome_file_summary.csv
-```
-All genomes that should have had a genome did download an fna.
-
-These did not download an fna but they are not part of this datafreeze; they do not have published genomes.
-```
-Scientific.Name AccessionUsed   Zip
-Aechmophorus_clarkii,N,N,N
-Datnioides_microlepis,N,N,N
-Pelomedusa_somalica,N,N,N
-Rhinoderma_darwinii,N,N,N
-Squalus_suckleyi,N,N,N
-Tenrec_ecaudatus,N,N,N
+grep 'N,N,N' ../reference_lists/genome_file_summary.csv
 ```
 
 Spot check these based on Slack from Simone:
 
 Heads up these accession #s have been updated in the most recent data freeze version: "GCA_051911825.1" "GCA_964094495.3" "GCA_014108245.2" "GCA_014176215.2" "GCA_003287225.3" "GCA_014706295.2" "GCA_054100595.1" "GCA_964204865.2"
 
+grep 'GCA_964204865' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv
 
-
-### Remove zip files:
+#### Remove zip files:
 This line outputs what will be deleted, so I can be sure it's not going to delete more than I want:
 ```
 find . -mindepth 2 -maxdepth 2 -type f -name "*.zip"
 ```
-This line deletes it:
+This line deletes it (ideally none should still exist):
 ```
 find . -mindepth 2 -maxdepth 2 -type f -name "*.zip" -delete
 ```
 
-# Create a list of GFF files
+### Create a list of GFF files
 ```
 cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 
@@ -125,12 +211,12 @@ find . -mindepth 5 -maxdepth 5 -type f -name "*.gff" | while read -r gff; do
   echo -e "${species}\t${accession}\t${fullpath}"
 done >> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/gff_file_list.tsv
 ```
-# Create a list of species lacking GFF files
+### Create a list of species lacking GFF files
 ```
 cd ../reference_lists
 awk -F',' '$3=="N"{print $1}' genome_file_summary.csv > species_requiring_lifted_gff.txt
 ```
-# Compare and make sure that all species are represented in the "Has GFF" vs "Needs GFF" lists
+#### Compare and make sure that all species are represented in the "Has GFF" vs "Needs GFF" lists
 ```
 
 LIST1="genome_file_summary.csv"
@@ -153,7 +239,7 @@ comm -23 list3.species needs_gff.txt
 # Cleanup
 rm list1.species list2.species list3.species needs_gff.txt
 ```
-# Create a list of FNA files
+### Create a list of FNA files
 ```
 cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 
@@ -197,7 +283,7 @@ find "${PWD}" -mindepth 5 -maxdepth 5 -type f -name "GC*_genomic.fna" \
 >> "$out"
 
 ```
-# Create a list of protein files
+### Create a list of protein files
 ```
 cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 
@@ -212,7 +298,7 @@ find . -mindepth 5 -maxdepth 5 -type f -name "protein.faa" | while read -r faa; 
   echo -e "${species}\t${accession}\t${fullpath}"
 done >> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/faa_file_list.tsv
 ```
-# Create a list of cds files
+### Create a list of cds files
 ```
 cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 
@@ -227,7 +313,7 @@ find . -mindepth 5 -maxdepth 5 -type f -name "cds_from_genomic.fna" | while read
   echo -e "${species}\t${accession}\t${fullpath}"
 done >> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/cds_file_list.tsv
 ```
-### Recreate data structure for Genespace using symlinks
+## Recreate data structure for Genespace using symlinks
 ```
 cd /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/
 
@@ -254,15 +340,83 @@ tail -n +2 /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/cds_file_lis
     mkdir -p "${species}"
     ln -sf "${cds}" "${species}/${species}.cds"
 done
+
+```
+## Rename X chromosome in Narcine bancroftii
+```
+# Check how the X chromosome is noted in the fna file
+grep 'chromosome 12' GCF_036971445.1_sNarBan1.hap1_genomic.fna
+
+# test a replacement of it to confirm that it is replacing the text we expect and none of that we don't expect
+sed 's/chromosome 12/chromosome X/g' GCF_036971445.1_sNarBan1.hap1_genomic.fna | grep 'chromosome 12'
+sed 's/chromosome 12/chromosome X/g' GCF_036971445.1_sNarBan1.hap1_genomic.fna | grep 'chromosome X' 
+
+# replace the text
+sed -i 's/chromosome 12/chromosome X/g' GCF_036971445.1_sNarBan1.hap1_genomic.fna
+
+# Check which other files annotate this chromosome as 12 instead of X
+grep 'chromosome 12' *
+
+# Replace it in matching files using the same script used for the fna file
+sed -i 's/chromosome 12/chromosome X/g' genomic.gff
+sed -i 's/chromosome 12/chromosome X/g' rna.fna
+
+# Confirm that no instances of chromosome 12 remain in any file
+grep 'chromosome 12' *
+```
+# Lift over annotations for western chrous frog
+**Same family annotations:**
+- Dendropsophus ebraccatus GCF_027789765.1
+- Hyla sarda GCF_029499605.1
+- Use Hyla sarda (Hifiasm, hi-C phasing); Dendropsophus was CLR
+
+```
+minimap2 -d Pseudacris_triseriata.fna.mmi Pseudacris_triseriata.fna
 ```
 
-Remove all empty directories:
 ```
-find /data/Wilson_Lab/data/VGP_genomes_phase1/genomes \
-     -type d -empty -delete
+#!/bin/bash
+
+cd /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Pseudacris_triseriata
+
+source myconda
+mamba activate lifton
+
+FNA_REF=/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Hyla_sarda/ncbi_dataset/data/GCF_029499605.1/GCF_029499605.1_aHylSar1.hap1_genomic.fna
+
+GFF_REF=/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Hyla_sarda/ncbi_dataset/data/GCF_029499605.1/genomic.gff
+
+FAA_REF=/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Hyla_sarda/ncbi_dataset/data/GCF_029499605.1/protein.faa
+
+GFF_QRY=/data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Pseudacris_triseriata/Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.gff
+
+FNA_QRY=/data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Pseudacris_triseriata/Pseudacris_triseriata.fna
+
+SC=0.5
+
+lifton \
+    -g ${GFF_REF} \
+    -o ${GFF_QRY} \
+    -P ${FAA_REF} \
+    -t 16 \
+    -sc ${SC} \
+    ${FNA_QRY} \
+    ${FNA_REF}
 ```
 
-### Download alternate haplotypes
+```
+sbatch \
+  -c 16 \
+  -t 5:00:00 \
+  --mem-per-cpu=24G \
+  --mail-user=jacksondan@nih.gov \
+  --mail-type=ALL \
+  --output=slurm_output/lifton_anuran.%j \
+  submit_lifton.sh 
+  ```
+
+# NOT DOING THIS ANYMORE
+### Download alternate haplotypes 
 ```
 cd /data/Wilson_Lab/data/VGP_genomes_phase1/Alternate_Haplotypes
 

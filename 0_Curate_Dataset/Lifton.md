@@ -72,16 +72,10 @@ lifton \
     ${FNA_QRY} \
     /data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Homo_sapiens/ncbi_dataset/data/GCA_009914755.4/GCA_009914755.4_T2T-CHM13v2.0_genomic.fna
 
+mv lifton_output/Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.gff .
 
-# copy output back
-cp "$TMPDIR/$query/$query.gff" "$basedir/$query/"
 
-# gffread
-cd /data/Wilson_Lab/data/VGP_genomes
-/data/newsomevw/gffread/gffread/gffread -J \
-  -y "$query/${query}.faa" \
-  -g "$query/${query}.fna" \
-  "$query/${query}.gff"
+grep -v '.1_' lifton_output/Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.gff > Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.no_dups.gff
 
-# check file size in dirs, tree
-# update RefSeq.annotation.main.haplotype for any that have an annotation now, but not prior
+wc -l lifton_output/Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.gff 
+wc -l Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.no_dups.gff
