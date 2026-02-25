@@ -1,6 +1,6 @@
 # Download all VGP Phase 1 genomes
 
-## Using the list of accession numbers in the VGP_list_sex_chroms_curated file, dentify latest GCF and GCA versions of all genomes
+## Using the list of accession numbers in the VGP_list_sex_chroms_curated file, identify latest GCF and GCA versions of all genomes
 ```
 ACCESSION_LIST="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/VGP_OrdinalList_Phase1Freeze_v1.2_Sept.30.2025_sex_chrs_HalfDeep_SCINKD.csv"
 
@@ -130,6 +130,52 @@ cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 echo 'Species,Accession_GCF,Accession_GCA' > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/did_not_run.csv
 echo 'Pseudacris_triseriata,,GCA_053478255.1' >> /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/did_not_run.csv
 ./download_vgp_array.troubleshoot.sh
+```
+## Replace RefSeq genomes that are scaffold level with latest GenBank genome
+
+```
+source myconda
+mamba activate ncbi_datasets
+
+rm -rf Rousettus_aegyptiacus
+rm -rf Molossus_molossus
+rm -rf Monodon_monocero
+rm -rf Myotis_myotis
+rm -rf Phascolarctos_cinereus
+rm -rf Pipistrellus_kuhlii
+
+
+mkdir -p "$GENOME_DIR"
+
+while IFS=, read -r SPECIES ACCESSION _; do
+  # skip blank lines
+  [[ -z "${SPECIES}" ]] && continue
+
+  # trim possible CR and trailing spaces/commas
+  SPECIES="${SPECIES//$'\r'/}"
+  ACCESSION="${ACCESSION//$'\r'/}"
+  ACCESSION="${ACCESSION%,}"
+
+  OUTDIR="${GENOME_DIR}/${SPECIES}"
+  mkdir -p "$OUTDIR"
+  ZIPFILE="${OUTDIR}/${ACCESSION}.zip"
+
+  echo "=== ${SPECIES} -> ${ACCESSION}"
+  datasets download genome accession "${ACCESSION}" \
+    --include "${FILES_TO_DOWNLOAD}" \
+    --filename "${ZIPFILE}"
+
+  unzip -o -q "${ZIPFILE}" -d "${OUTDIR}"
+  rm -f "${ZIPFILE}"
+done <<'EOF'
+Rousettus_aegyptiacus,GCA_014176215.2
+Molossus_molossus,GCA_014108415.2
+Monodon_monocero,GCA_005190385.4,
+Myotis_myotis,GCA_014108235.2
+Phascolarctos_cinereus,GCA_003287225.3
+Pipistrellus_kuhlii,GCA_014108245.2
+EOF
+
 ```
 ## Create reference files about downloads (e.g. paths to fna files)
 ### Create summary file of genomes with sequence and annotation files
@@ -344,6 +390,7 @@ done
 ```
 ## Rename X chromosome in Narcine bancroftii
 ```
+cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Narcine_bancroftii/ncbi_dataset/data/GCF_036971445.1/
 # Check how the X chromosome is noted in the fna file
 grep 'chromosome 12' GCF_036971445.1_sNarBan1.hap1_genomic.fna
 
@@ -414,6 +461,12 @@ sbatch \
   --output=slurm_output/lifton_anuran.%j \
   submit_lifton.sh 
   ```
+
+
+
+
+
+
 
 # NOT DOING THIS ANYMORE
 ### Download alternate haplotypes 

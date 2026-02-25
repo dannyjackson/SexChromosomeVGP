@@ -14,13 +14,7 @@ mkdir -p "$ONLY_YW_ROOT" "$ONLY_XZ_ROOT"
 
 # If you only want to process a subset, fill this list with species names (e.g. Homo_sapiens).
 # Leave empty to auto-detect species from $SEX_CHR.
-SPECIES_FILTER=(
-  "Homo_sapiens"
-  "Gallus_gallus"
-  "Anolis_sagrei"
-  "Podarcis_raffonei"
-  "Hoplias_malabaricus"
-  "Narcine_bancroftii"
+SPECIES_FILTER=("Alca_Torda"
 )
 
 # ---- helpers ----

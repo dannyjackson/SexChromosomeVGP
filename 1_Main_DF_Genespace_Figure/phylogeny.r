@@ -7,7 +7,7 @@ library(ape)
 
 tree_file <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk"
 
-SPECIES <- c("Homo_sapiens", "Gallus_gallus", "Anolis_sagrei", "Podarcis_raffonei", "Hyla_sarda", "Hoplias_malabaricus", "Narcine_bancroftii")
+SPECIES <- c("Homo_sapiens", "Gallus_gallus", "Podarcis_raffonei", "Hyla_sarda", "Gasterosteus_aculeatus", "Narcine_bancroftii")
 
 tr_full <- ape::read.tree(tree_file)
 

@@ -95,6 +95,8 @@ chmod +x filter_YW.sh
 chmod +x filter_to_sex_chrs.sh
 ./filter_to_sex_chrs.sh
 
+tail /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Only_XZ/Accipiter_gentilis/Accipiter_gentilis.gff
+
 # Parse annotation files
 ```
 cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Figure

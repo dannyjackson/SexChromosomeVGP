@@ -55,3 +55,4 @@ dependencies:
   - samtools
   - orthofinder=2.5.5
   - mcscanx
+  - seqkit

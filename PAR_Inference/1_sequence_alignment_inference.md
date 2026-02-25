@@ -8,7 +8,7 @@ Simone performed the alignment -- add in her code here.
 ### Join contiguous regions at either end of the sex chromosomes
 The above code output a collection of bedfiles, found here:
 ```
-export BEDDIR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/align_PAR_99thr/align_PAR_inference
+export BEDDIR=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_99thr/align_PAR_inference
 ```
 There should be only one bed per genome. To confirm, I ran the following:
 
@@ -32,7 +32,7 @@ The fastatofasta.aln and YchromotoXchrom files are duplicates of each other.
 
 #### Create a list that excludes duplicates:
 ```
-printf "%s\n" "$BEDDIR"/* | grep -v 'YchromtoXchrom' | grep -v 'fastatofasta' > /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/alignment_beds.txt
+printf "%s\n" "$BEDDIR"/* | grep -v 'YchromtoXchrom' | grep -v 'fastatofasta' > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/alignment_beds.txt
 ```
 
 Check to confirm that all bed files only contain one chromsome each:
@@ -44,7 +44,7 @@ while read -r bed; do
     if [ "$num_chr" -gt 1 ]; then
         echo "$bed"
     fi
-done < /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/alignment_beds.txt
+done < /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/alignment_beds.txt
 ```
 Sort all bed files, and merge overlapping regions
 ```
@@ -98,7 +98,7 @@ Genomes that did not match:
 | Pongo_pygmaeus | NC_072396.2 | CM054653.2 | Is refseq chrom, just missing from metadata file | Nothing - is fine |
 | Sus_scrofa | CM060728.1 | CM107810.1 | CM107810 is in T2T_pig on ncbi with corresponding GCA and is 137,020,761 bp ; CM060728 is a different genome on NCBI and is 135,116,946 bp (https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_030704935.2/) | ? |
 
-cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/
 mv Fringilla_coelebs_YtoX.aln.paf Tamandua_tetradactyla_YtoX.aln.paf
 mv Notamacropus_eugenii_YtoX.aln.paf Macropus_eugenii_YtoX.aln.paf
 mkdir -p junk_continuous_percentID
@@ -114,7 +114,7 @@ mv Rhynchocyon_petersi_YchromtoXchrom.aln.paf junk_continuous_percentID/
 mv Monodelphis_domestica_YtoX.aln.paf junk_continuous_percentID/
 grep -v 'NW_' junk_continuous_percentID/Monodelphis_domestica_YtoX.aln.paf > Monodelphis_domestica_YtoX.aln.paf
 
-cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/continuous_percentID
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID
 mv Fringilla_coelebs_YtoX.refqry.csv Tamandua_tetradactyla_YtoX.aln.refqry.csv
 mv Pongo_abelii_fastatofasta.aln.refqry.csv ../junk_continuous_percentID/
 mv Pongo_pygmaeus_fastatofasta.aln.refqry.csv ../junk_continuous_percentID/
@@ -320,11 +320,11 @@ classIntervals(vals, n = 25, style = "jenks")$brks
 Using $SEXCHRLEN, compute 
 
 ```
-cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_inference
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_inference
 
-export SEXCHRLEN=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_phylogeny/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
+export SEXCHRLEN=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_phylogeny/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
 
 
 ```
-export TREE=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/roadies_v1.1.16b.nwk
-export ANN=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/annotations.tsv
+export TREE=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/roadies_v1.1.16b.nwk
+export ANN=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/annotations.tsv

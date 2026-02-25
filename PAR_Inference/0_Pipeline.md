@@ -22,9 +22,9 @@ It is stored in this GitHub repository in Datafiles/VGP_OrdinalList_Phase1Freeze
 I organized my thoughts regarding which data to keep from the "VGP_OrdinalList_Phase1Freeze_v1" csv file 
 
 ```
-cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/
 
-export VGP=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/VGP_OrdinalList_Phase1Freeze_v1.1_sex_chroms_seqCov_HalfDeep_SCINKD_May8.25_DwnldDec16.25.csv
+export VGP=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/VGP_OrdinalList_Phase1Freeze_v1.1_sex_chroms_seqCov_HalfDeep_SCINKD_May8.25_DwnldDec16.25.csv
 
 module load R/4.5.0
 

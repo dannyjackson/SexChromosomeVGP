@@ -2,12 +2,12 @@
 #SBATCH -J sexchr_split
 #SBATCH -o logs/%x_%A_%a.out
 #SBATCH -e logs/%x_%A_%a.err
-#SBATCH --time=06:00:00
+#SBATCH --time=00:10:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=4G
-#SBATCH --array=1-330
-
-set -euo pipefail
+#SBATCH  --mail-user=jacksondan@nih.gov 
+#SBATCH  --mail-type=ALL
+#SBATCH  --output=slurm_output/sexchr_split.%j 
 
 mkdir -p logs
 
