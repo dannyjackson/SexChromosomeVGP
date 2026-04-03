@@ -6,8 +6,8 @@ cat("Starting telomere plot generation\n")
 cat("Base directory:", base_dir, "\n\n")
 
 all_data <- list()
-
 species_dirs <- list.dirs(base_dir, recursive = FALSE)
+
 cat("Found", length(species_dirs), "species directories\n\n")
 
 for (i in seq_along(species_dirs)) {

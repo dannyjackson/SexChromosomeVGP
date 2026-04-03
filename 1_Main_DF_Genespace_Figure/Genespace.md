@@ -38,6 +38,7 @@ cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Gen
 ```
 ## Identify dataset genomes
 ```
+
 GENOME_DIR=/data/Wilson_Lab/data/VGP_genomes_phase1/symlinks
 MAMMAL=${GENOME_DIR}/Homo_sapiens/
 BIRD=${GENOME_DIR}/Gallus_gallus/
@@ -83,20 +84,6 @@ cd /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Hyla_sarda
 transeq -sequence Hyla_sarda.cds -outseq Hyla_sarda.translated.cds
 
 ```
-# Remove Y and W chromosomes
-cd /data/Wilson_Lab/data/VGP_genomes_phase1
-
-echo 'Pseudacris_triseriata,X,CM130676.1' >> /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/sexchrom_accessions.csv
-
-chmod +x filter_YW.sh
-./filter_YW.sh
-
-# Remove everything but sex chromosomes
-chmod +x filter_to_sex_chrs.sh
-./filter_to_sex_chrs.sh
-
-tail /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Only_XZ/Accipiter_gentilis/Accipiter_gentilis.gff
-
 # Parse annotation files
 ```
 cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Figure
@@ -108,7 +95,7 @@ library(GENESPACE)
 SPECIES=c("Homo_sapiens", "Gallus_gallus", "Anolis_sagrei", "Podarcis_raffonei", "Hoplias_malabaricus", "Narcine_bancroftii")
 
 parsedPaths <- parse_annotations(
-  rawGenomeRepo = "/data/Wilson_Lab/data/VGP_genomes_phase1/No_YW", 
+  rawGenomeRepo = "/data/Wilson_Lab/data/VGP_genomes_phase1", 
   genomeDirs = SPECIES,
   genomeIDs = SPECIES,
   gffString = "gff",
@@ -119,7 +106,7 @@ parsedPaths <- parse_annotations(
 SPECIES=c("Pseudacris_triseriata")
 
 parsedPaths <- parse_annotations(
-  rawGenomeRepo = "/data/Wilson_Lab/data/VGP_genomes_phase1/No_YW", 
+  rawGenomeRepo = "/data/Wilson_Lab/data/VGP_genomes_phase1", 
   genomeDirs = SPECIES,
   genomeIDs = SPECIES,
   gffString = "gff",
@@ -176,7 +163,7 @@ q()
 
 mv bed/Pseudacris_triseriata.remapped.bed bed/Pseudacris_triseriata.bed
 
-# Replace column 12 with X in Narcine bancroftii
+# Replace chromosome 12 with X in Narcine bancroftii
 
 awk 'BEGIN{OFS="\t"} $1=="12"{$1="X"} {print}' bed/Narcine_bancroftii.bed > bed/Narcine_bancroftii.bed.tmp \
 && mv bed/Narcine_bancroftii.bed.tmp bed/Narcine_bancroftii.bed

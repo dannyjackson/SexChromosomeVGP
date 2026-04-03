@@ -1,0 +1,100 @@
+# Can we run SCINKD on genomes with one chromosome level haplotype and one contig level?
+## Hyla sarda
+### Prepare files for SCINKD
+```
+GENOME_DIR="/data/Wilson_Lab/data/VGP_genomes_phase1/genomes"
+ACCESSION_LIST="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv"
+
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/SCINKD_SexChrID/Hyla_sarda
+
+source myconda
+mamba activate ncbi_datasets
+
+HAP1=GCF_029499605.1
+HAP2=GCA_029493135.1
+FILES_TO_DOWNLOAD="gff3,rna,cds,protein,genome,seq-report"
+
+datasets download genome accession ${HAP1} \
+  --include "${FILES_TO_DOWNLOAD}" \
+  --filename ${HAP1}.zip
+
+unzip ${HAP1}.zip
+mkdir -p HAP1
+mv * HAP1/
+
+datasets download genome accession ${HAP2} \
+  --include "${FILES_TO_DOWNLOAD}" \
+  --filename ${HAP2}.zip
+
+unzip ${HAP2}.zip
+mkdir -p HAP2
+mv * HAP2/
+mv HAP2/HAP1 .
+
+module load samtools 
+SPECIES=Hyla_sarda
+
+HAP1_FASTA="HAP1/ncbi_dataset/data/GCF_029499605.1/GCF_029499605.1_aHylSar1.hap1_genomic.fna"
+HAP2_FASTA="HAP2/ncbi_dataset/data/GCA_029493135.1/GCA_029493135.1_aHylSar1.hap2_genomic.fna"
+
+# Bgzip and index genomes
+
+bgzip -f "$HAP1_FASTA"
+samtools faidx "$HAP1_FASTA".gz
+
+bgzip -f "$HAP2_FASTA"
+samtools faidx "$HAP2_FASTA".gz
+
+
+# Symlinks to hap FASTAs
+ln -sf "$HAP1_FASTA".gz "${SPECIES}.hap1.fasta.gz"
+ln -sf "$HAP2_FASTA".gz "${SPECIES}.hap2.fasta.gz"
+
+# Index gz FASTAs
+samtools faidx "${SPECIES}.hap1.fasta.gz"
+samtools faidx "${SPECIES}.hap2.fasta.gz"
+
+  # Write config
+cat > "config.${SPECIES}.json" <<EOF
+{
+  "prefix": "${SPECIES}"
+}
+EOF
+```
+# Run SCINKD
+source myconda
+mamba activate scinkd
+
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/SCINKD_SexChrID/Hyla_sarda
+
+#run SCINKD in greedy mode for quick testing
+
+snakemake --use-conda \
+    -c 1 \
+    -s /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/SCINKD_PAR_dropout/SCINKD/SCINKD.v2.1.0.GREEDY.snakefile \
+    --configfile /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/SCINKD_SexChrID/Hyla_sarda/config.Hyla_sarda.json --printshellcmds --show-failed-logs
+
+
+meryl difference Hyla_sarda.hap1.meryl Hyla_sarda.hap2.meryl output Hyla_sarda.hap1-minus-hap2.meryl/
+
+meryl difference Hyla_sarda.hap2.meryl Hyla_sarda.hap1.meryl output Hyla_sarda.hap2-minus-hap1.meryl/
+
+meryl-lookup -sequence Hyla_sarda.hap1.fasta.gz -mers Hyla_sarda.hap1-minus-hap2.meryl -bed -output Hyla_sarda.hap1-minus-hap2.bed
+
+meryl-lookup -sequence Hyla_sarda.hap2.fasta.gz -mers Hyla_sarda.hap2-minus-hap1.meryl -bed -output Hyla_sarda.hap2-minus-hap1.bed
+
+##calculate number of kmers occuring in each haplotype
+
+cut -f1 Hyla_sarda.hap1-minus-hap2.bed | uniq -c > Hyla_sarda.hap1-minus-hap2.txt
+awk '{{print $2,$1}}' OFS='\t' Hyla_sarda.hap1-minus-hap2.txt > Hyla_sarda.hap1-minus-hap2.results
+
+cut -f1 Hyla_sarda.hap2-minus-hap1.bed | uniq -c > Hyla_sarda.hap2-minus-hap1.txt
+awk '{{print $2,$1}}' OFS='\t' Hyla_sarda.hap2-minus-hap1.txt > Hyla_sarda.hap2-minus-hap1.results
+
+grep 'NC' Hyla_sarda.hap1-minus-hap2.bed > Hyla_sarda.hap1-minus-hap2.bed.tmp
+mv Hyla_sarda.hap1-minus-hap2.bed.tmp Hyla_sarda.hap1-minus-hap2.bed
+
+grep 'NC' Hyla_sarda.hap1-minus-hap2.results > Hyla_sarda.hap1-minus-hap2.results.tmp
+mv Hyla_sarda.hap1-minus-hap2.results.tmp Hyla_sarda.hap1-minus-hap2.results
+
+Rscript plot_kmer_density.onehap.r -s Hyla_sarda -o /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/SCINKD_SexChrID/Hyla_sarda 

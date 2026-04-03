@@ -19,7 +19,7 @@ SEXCHR <- args[3]
 # Working directory: prefer env var WORKING_DIR, otherwise current dir (where you cd'd in SLURM)
 
 f <- file.path(
-  "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/XZ_Synteny_Gallus_gallus/all/genespace",
+  "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/YW_Synteny_Gallus_gallus/all/genespace",
   SPECIES_ID,
   "results",
   "gsParams.rda"

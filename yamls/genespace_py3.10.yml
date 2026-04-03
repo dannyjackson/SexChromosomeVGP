@@ -1,0 +1,66 @@
+name: genespace_py3.10
+channels:
+  - conda-forge
+  - bioconda
+channel_priority: strict
+
+dependencies:
+  # ---- OrthoFinder safety pins ----
+  - python=3.10
+  - numpy<2
+  - scipy
+  - scikit-learn
+  - biopython
+
+  # ---- R core ----
+  - r-base=4.4
+  - r-devtools
+  - r-data.table
+  - r-igraph
+  - r-s7
+
+  # ---- tidyverse / plotting ----
+  - r-tidyverse
+  - r-magrittr
+  - r-ggplot2
+  - r-ggrepel
+  - r-patchwork
+  - r-cowplot
+  - r-reshape2
+  - r-dplyr
+  - r-stringr
+  - r-purrr
+  - r-readr
+  - r-rmarkdown
+  - r-knitr
+  - r-cairo
+  - r-rcolorbrewer
+  - r-scales
+  - r-circlize
+
+  # ---- Bioconductor (GENESPACE deps) ----
+  - bioconductor-biostrings
+  - bioconductor-genomicranges
+  - bioconductor-iranges
+  - bioconductor-s4vectors
+  - bioconductor-rtracklayer
+
+  # ---- system libs (prevents XML/zlib/graphics failures) ----
+  - zlib
+  - xz
+  - libxml2
+  - curl
+  - openssl
+  - pkg-config
+  - cairo
+
+  # ---- genomics tools ----
+  - blast
+  - diamond
+  - mafft
+  - mcl
+  - bedtools
+  - samtools
+  - orthofinder=2.5.5
+  - mcscanx
+  - seqkit

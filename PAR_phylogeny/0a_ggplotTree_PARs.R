@@ -34,7 +34,7 @@ sex_chr <- fread(sex_chr_len_file)
 
 # Get names of the accession columns
 col_sex <- names(sex_chr)[1]
-col_ann <- names(ann)[1]
+col_ann <- names(ann)[12]
 
 # Normalize accession IDs by removing leading GCA_ or GCF_
 sex_chr[, acc_norm := sub("^GC[AF]_", "", get(col_sex))]

@@ -2,6 +2,8 @@
 
 ## Using the list of accession numbers in the VGP_list_sex_chroms_curated file, identify latest GCF and GCA versions of all genomes
 ```
+cd /data/Wilson_Lab/data/VGP_genomes_phase1/scripts
+
 ACCESSION_LIST="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/VGP_OrdinalList_Phase1Freeze_v1.2_Sept.30.2025_sex_chrs_HalfDeep_SCINKD.csv"
 
 mamba activate ncbi_datasets   # or wherever datasets is installed
@@ -10,6 +12,14 @@ chmod +x make_latest_gca_gcf_csv.sh
 
 head $ACCESSION_LIST
 head /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv
+
+# replace Panthera onca haplotype -- the one in this list is Hap1 and the one in the VGP but it lacks the sex chrs
+sed -i 's/GCA_046562885.2/GCA_046562875.2/g' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv
+sed -i 's/GCF_046562885.1//g' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv
+
+# replace Anniella stebbinsi haplotype -- the one in this is in the VGP reference sheet but it is not chromosome level. It appears that the other genome on NCBI is the same isolate but is chromosome level -- not sure why they didn't update the accession and instead attributed a new one.
+sed -i 's/GCA_029215775.1/GCA_051312515.2/g' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species_latest_accessions.csv
+
 ```
 ### Check which species are in the VGP list but didn't make it to the list of latest accessions
 ```
@@ -86,6 +96,7 @@ Acridotheres_tristis,,GCA_027559615.1
 Zootoca_vivipara,GCF_963506605.1,
 ```
 Then run the following:
+(do this also using Anniella_stebbinsi,GCA_051312515.2)
 ```
 chmod +x download_vgp_array.troubleshoot.sh
 ./download_vgp_array.troubleshoot.sh
@@ -130,6 +141,7 @@ cd /data/Wilson_Lab/data/VGP_genomes_phase1/genomes
 echo 'Species,Accession_GCF,Accession_GCA' > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/did_not_run.csv
 echo 'Pseudacris_triseriata,,GCA_053478255.1' >> /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/did_not_run.csv
 ./download_vgp_array.troubleshoot.sh
+
 ```
 ## Replace RefSeq genomes that are scaffold level with latest GenBank genome
 

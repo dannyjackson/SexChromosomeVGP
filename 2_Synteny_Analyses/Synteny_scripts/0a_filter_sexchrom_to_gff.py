@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
+import sys
+from pathlib import Path
 import csv
 
+if len(sys.argv) != 2:
+    raise SystemExit(f"Usage: {sys.argv[0]} OUTDIR")
+
+outdir = Path(sys.argv[1])
 sex_path = "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/sexchrom_accessions.csv"
 gff_path = "/data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/gff_file_list.tsv"
-out_path = "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/sexchrom_accessions.with_gff.csv"
+out_path = outdir / "sexchrom_accessions.with_gff.csv"   # example: write into OUTDIR
+outdir.mkdir(parents=True, exist_ok=True)
 
 # 1) Read species present in the GFF list (TSV)
 keep_species = set()

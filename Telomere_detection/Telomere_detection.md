@@ -11,7 +11,7 @@ This script infers if the X and Y chromosomes are bounded by telomeres in VGP Da
 
 ## 1. Make a reference list of all VGP genome fasta files
 ```
-cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/
 wget https://raw.githubusercontent.com/VGP/vgp-phase1/main/VGPPhase1-freeze-1.0.tsv
 
 ls /data/Wilson_Lab/data/VGP_genomes/*/*.fna | grep -Ev '\.(cds|rna)\.fna$' | wc -l
@@ -27,7 +27,7 @@ ls $base/Myotis_mystacinus
 # Missing Myotis_mystacinus
 https://github.com/VGP/vgp-phase1/blob/main/VGPPhase1-freeze-1.0.tsv
 
-ls /data/Wilson_Lab/data/VGP_genomes/*/*.fna | grep -Ev '\.(cds|rna)\.fna$' > /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/VGP_phase1_fastas.txt
+ls /data/Wilson_Lab/data/VGP_genomes/*/*.fna | grep -Ev '\.(cds|rna)\.fna$' > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/VGP_phase1_fastas.txt
 
 sed 's#.*/##; s/\.fna$//' VGP_phase1_fastas.txt | sort -u > fasta_species.list
 awk -F'\t' 'NR>1 {
@@ -37,7 +37,7 @@ awk -F'\t' 'NR>1 {
 
 comm -23 vgp_species.list fasta_species.list | wc -l
 
-cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/
 comm -23 vgp_species.2.list fasta_species.list | wc -l
 
 # 8 missing species in fasta list
@@ -134,7 +134,7 @@ rm -r logs
 
 Run this to create a TSV with columns "Species,Chromosome,Accession"
 ```
-export TSV=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
+export TSV=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
 export GENOMEDIR=/data/Wilson_Lab/data/VGP_genomes
 
 GITREP="~/dannys_githubs/SexChromosomeVGP/"
@@ -209,8 +209,8 @@ echo 'Canis_lupus,Y,NC_132877.1' >> sexchrom_accessions.csv
 ```
 ## 3. Subset out each sex chromosome from each fasta
 ```
-SEXCHRFILE="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/sexchrom_accessions.csv"
-OUTDIR="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/sex_chrs"
+SEXCHRFILE="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/sexchrom_accessions.csv"
+OUTDIR="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/sex_chrs"
 
 mkdir -p "${OUTDIR}"
 
@@ -230,8 +230,8 @@ done
 
 ## 4. Use the Telomere Identification toolKit (tidk) to annotate telomeres on each sex chromosome (https://github.com/tolkit/telomeric-identifier)
 ```
-FASTADIR="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/sex_chrs"
-OUTDIR="/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/Telomere_detection/sexchrs/tidk_results"
+FASTADIR="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/sex_chrs"
+OUTDIR="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Telomere_detection/sexchrs/tidk_results"
 
 mkdir -p "${OUTDIR}"
     
@@ -250,18 +250,18 @@ done
 
 # 
 
-cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/Telomere_detection
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Telomere_detection
 
 module load mamba_install
 source myconda
 
 conda install -c bioconda tidk
 
-FASTA=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/genomes/Homo_sapiens_CHM13/Xchr.fa
+FASTA=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/genomes/Homo_sapiens_CHM13/Xchr.fa
 
 tidk search $FASTA --string TTAGGG --output CHM13_Xchr --dir Homo_sapiens
 
-FASTA=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/genomes/Homo_sapiens_CHM13/Xchr.fa
+FASTA=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/genomes/Homo_sapiens_CHM13/Xchr.fa
 
 tidk search $FASTA --string TTAGGG --output CHM13_Xchr --dir Homo_sapiens
 
@@ -272,7 +272,7 @@ tidk search $FASTA --string TTAGGG --output CHM13_Xchr --dir Homo_sapiens
 
 module load R
 
-cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/Telomere_detection/sexchrs/tidk_results
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Telomere_detection/sexchrs/tidk_results
 
 Rscript plot_telomere.faceted.r
 

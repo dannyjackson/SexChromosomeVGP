@@ -7,19 +7,21 @@ suppressPackageStartupMessages({
 })
 
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) < 3) {
-  stop("Usage: Rscript genespace.synteny_to_chicken.wholegenome.sexchr.r <SPECIES_ID> <OUTDIR> <SEXCHR>\n",
-       "Example: Rscript genespace.synteny_to_chicken.wholegenome.sexchr.r Bos_taurus /path/out/ X")
+if (length(args) < 4) {
+  stop("Usage: Rscript genespace.wholegenome.sexchr.r <SPECIES_ID> <OUTDIR> <SEXCHR>\n",
+       "Example: Rscript genespace.wholegenome.sexchr.r Bos_taurus /path/out/ X")
 }
 
 SPECIES_ID <- args[1]
 OUTDIR <- args[2]
 SEXCHR <- args[3]
+REF <- args[4]
 
 # Working directory: prefer env var WORKING_DIR, otherwise current dir (where you cd'd in SLURM)
 
 f <- file.path(
-  "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/XZ_Synteny_Gallus_gallus/all/genespace",
+  "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace",
+  REF, "sexshared",
   SPECIES_ID,
   "results",
   "gsParams.rda"
@@ -28,7 +30,7 @@ f <- file.path(
 load(f, verbose = TRUE)
 
 # Genome IDs to plot
-genomeIDs <- c(SPECIES_ID, "Gallus_gallus_REF")
+genomeIDs <- c(SPECIES_ID, REF)
 
 ordFun <- function(x) {
   data.table::frank(
@@ -52,7 +54,7 @@ ripDat <- plot_riparian(
     gsParam = gsParam,
     highlightBed = roi, 
     backgroundColor = NULL,
-    refGenome = "Gallus_gallus_REF",
+    refGenome = REF,
     genomeIDs = genomeIDs,
     minChrLen2plot = 1,
     refChrOrdFun = ordFun,
@@ -64,7 +66,7 @@ ripDat <- plot_riparian(
 p_list <- ripDat$plot
 p <- p_list[[1]]
 
-pdf_name <- file.path(OUTDIR, sprintf("%s.Gallus_gallus.5x3.%s.38.pdf", SPECIES_ID, SEXCHR))
+pdf_name <- file.path(OUTDIR, sprintf("%s.%s.5x3.%s.pdf", SPECIES_ID, REF, SEXCHR))
 
 ggsave(
   filename = pdf_name,
@@ -76,7 +78,7 @@ ggsave(
 
 message("Wrote: ", pdf_name)
 
-png_name <- file.path(OUTDIR, sprintf("%s.Gallus_gallus.5x3.%s.png", SPECIES_ID, SEXCHR))
+png_name <- file.path(OUTDIR, sprintf("%s.%s.5x3.%s.png", SPECIES_ID, REF, SEXCHR))
 
 ggsave(
   filename = png_name,

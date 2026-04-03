@@ -1,6 +1,6 @@
 PAR inference with tree
 
-cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_inference/alignment/continuous_percentID
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_inference/alignment/continuous_percentID
 
 
 # ============================================================
@@ -18,7 +18,7 @@ library(ape)
 # ----------------------------
 # Inputs
 # ----------------------------
-tree_file <- "/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk"
+tree_file <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk"
 
 
 thr <- 98.5
@@ -46,9 +46,9 @@ mb_endpoints_only <- function(lims) {
 # ----------------------------
 # Paths
 # ----------------------------
-setwd("/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_inference/alignment/continuous_percentID")
+setwd("/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_inference/alignment/continuous_percentID")
 
-dir_in <- "/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/continuous_percentID"
+dir_in <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID"
 files  <- list.files(dir_in, pattern = "\\.refqry\\.csv$", full.names = TRUE)
 
 

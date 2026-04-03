@@ -1,0 +1,8 @@
+name: ncbi_datasets
+channels:
+  - conda-forge
+dependencies:
+  - ca-certificates=2026.1.4=hbd8a1cb_0
+  - ncbi-datasets-cli=18.15.0=ha770c72_0
+
+prefix: "/vf/users/jacksondan/conda/envs/ncbi_datasets"
