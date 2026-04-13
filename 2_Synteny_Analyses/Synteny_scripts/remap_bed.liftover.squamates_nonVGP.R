@@ -2,7 +2,6 @@
 
 args <- commandArgs(trailingOnly = TRUE)
 SPECIES <- args[1]
-PROJDIR <- args[2]
 
 if (is.na(SPECIES) || !nzchar(SPECIES)) {
   stop("Usage: Rscript remap_bed.R <SPECIES>", call. = FALSE)
@@ -11,8 +10,8 @@ if (is.na(SPECIES) || !nzchar(SPECIES)) {
 library(readr)
 
 bed_file <- sprintf(
-  "%s/bed/%s.bed",
-  PROJDIR, SPECIES
+  "/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_nonVGP_lifted_gffs/Genespace_input_unfiltered/bed/%s.bed",
+  SPECIES
 )
 
 map_file <- sprintf(
@@ -21,8 +20,8 @@ map_file <- sprintf(
 )
 
 out_file <- sprintf(
-  "%s/bed_reformatted/%s.remapped.bed",
-  PROJDIR, SPECIES
+  "/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_nonVGP_lifted_gffs/Genespace_input_unfiltered/bed_reformatted/%s.remapped.bed",
+  SPECIES
 )
 
 bed <- read_tsv(

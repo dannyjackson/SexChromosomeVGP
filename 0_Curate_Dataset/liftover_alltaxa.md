@@ -73,7 +73,6 @@ while IFS=, read -r species refgenome; do
 done <<'EOF'
 Equus_caballus,Diceros_bicornis_minor
 Podarcis_siculus,Podarcis_raffonei
-
 EOF
 
 Elephas_maximus_indicus,Loxodonta_africana
@@ -88,13 +87,31 @@ Tupaia_tana,Homo_sapiens
 Chlamydotis_macqueenii,Columba_livia
 EOF
 
+# must redo:
+while IFS=, read -r species refgenome; do
+  sbatch liftover.sh -s "$species" -r "$refgenome"
+done <<'EOF'
+Notoryctes_typhlops,Macropus_eugenii
+Tupaia_tana,Homo_sapiens
+EOF
+
+
 ## Duplicates
-Phascolarctos cinereus,Macropus_eugenii
-Hoplias malabaricus,Gasterosteus_aculeatus
-Echiichthys vipera,Gasterosteus_aculeatus
-Girardinichthys multiradiatus,Gasterosteus_aculeatus
+Phascolarctos_cinereus,Macropus_eugenii
+Hoplias_malabaricus,Gasterosteus_aculeatus
+Echiichthys_vipera,Gasterosteus_aculeatus
+Girardinichthys_multiradiatus,Gasterosteus_aculeatus
 Lemur_catta,Homo_sapiens
 
+while IFS=, read -r species refgenome; do
+  sbatch liftover.sh -s "$species" -r "$refgenome"
+done <<'EOF'
+Phascolarctos_cinereus,Macropus_eugenii
+Hoplias_malabaricus,Gasterosteus_aculeatus
+Echiichthys_vipera,Gasterosteus_aculeatus
+Girardinichthys_multiradiatus,Gasterosteus_aculeatus
+Lemur_catta,Homo_sapiens
+EOF
 
 Amblyraja radiata
 Tursiops truncatus

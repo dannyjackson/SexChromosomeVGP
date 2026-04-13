@@ -56,7 +56,15 @@ done < /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses
 
 ## Create a table of syntenic regions to each reference genome
 ```
+# Copy all genomes 
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus
+cp -r sexshared_squamates_VGP/* sexshared/
+cp -r sexshared_liftover/* sexshared/
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/scripts
+
+sed -i 's/monoceros/monocero/g' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/VGP_OrdinalList_Phase1Freeze_v1.1_sex_chroms_seqCov_HalfDeep_SCINKD_May8.25_DwnldDec16.25.csv
 Rscript 1e_combine_phsblks.r Gallus_gallus
+
 while read -r REF; do
     echo ${REF}
     Rscript 1e_combine_phsblks.r ${REF}
@@ -70,31 +78,14 @@ FILE=Gallus_gallus_syntentic_chromosomes.sex_shared.csv
 sed -i 's/Accipiter_gentilis/Astur_gentilis/g' $FILE
 sed -i 's/Lagenorhynchus_acutus/Leucopleurus_acutus/g' $FILE
 sed -i 's/Eptesicus_nilssonii/Cnephaeus_nilssonii/g' $FILE
-echo 'Narcine_bancroftii,X,"14,27,34",,' >> $FILE
 
-## Accipiter gentilis
-## Lagenorhynchus acutus > Leucopleurus acutus
-## Eptesicus nilssonii > Cnephaeus nilssonii
-## Narcine bancroftii -- chr 12
+echo 'Gallus_gallus,Z,Z,,' >> $FILE
 
-# Anniella stebbinsi
 ```
 # Plot it on the phylogeny
 ```
 cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/scripts
-# Run this interactively on one species to double check that all species are being matched on the phylogeny
-# This checks: What species have RefChr data but are not in the tree?
-setdiff(unique(grid_df$Species), tr_ultra$tip.label) 
-# [1] "Accipiter_gentilis"   "Amazona_ochrocephala" "Canis_lupus"         
-# [4] "Pongo_abelii"         "Sciurus_carolinensis"
 
-"Sciurus_carolinensis" %in% tr_ultra$tip.label
-grep("Sciurus", tr_ultra$tip.label, value = TRUE)
-
-"Pongo_abelii" %in% tr_ultra$tip.label
-grep("Pongo", tr_ultra$tip.label, value = TRUE)
-
-# test on Gallus
 Rscript 1f_plot_genespace.r Gallus_gallus
 
 # run on other refs
@@ -144,6 +135,8 @@ Echiichthys vipera
 
 
 # Rerun:
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/scripts
+
 PAIRFILE=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.csv
 PAIRFILE_TRBL=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.troubleshoot.csv
 grep 'Echiichthys_vipera' $PAIRFILE > ${PAIRFILE_TRBL}
@@ -158,6 +151,12 @@ sbatch --array=1-${N} 1b_genespace_array.troubleshoot.sh Gallus_gallus
 ## Neo sex
 grep 'Hoplias_malabaricus' $PAIRFILE | grep 'X1' >> ${PAIRFILE_TRBL}
 
+## Missing sex chrs on main assembly
+PAIRFILE_TRBL=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.troubleshoot.csv
+echo -e 'Panthera_onca\tX' > ${PAIRFILE_TRBL}
+
+N=$(wc -l < /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.troubleshoot.csv)
+sbatch --array=1-${N} 1b_genespace_array.troubleshoot.sh Gallus_gallus
 
 
 

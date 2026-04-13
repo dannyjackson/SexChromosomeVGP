@@ -1,4 +1,6 @@
 # Download squamate genomes that are not in VGP
+(Anniella_stebbinsi is in VGP but Z is in Hap2 not Hap1 so I have to redownload it)
+```
 Xantusia_vigilis,GCA_051940855.1
 Cyrtopodion_scabrum,GCA_054791115.1
 Pogona_vitticeps,GCF_051106095.1
@@ -7,8 +9,9 @@ Hemicordylus_capensis,GCF_027244095.1
 Chamaeleo_calyptratus,GCA_043643385.1
 Sphaerodactylus_townsendi,GCF_021028975.2
 Varanus_acanthurus,GCA_050042745.1
+Anniella_stebbinsi,GCA_051312545.2
 
-
+```
 ## Download all genomes and annotation files from the most recent GCF (preferred) or, if no GCF exists, most recent GCA
 ```
 source myconda
@@ -17,9 +20,6 @@ mamba activate ncbi_datasets
 GENOME_DIR=/data/Wilson_Lab/data/VGP_genomes_phase1/squamate_nonVGP_genomes
 mkdir -p "${GENOME_DIR}"
 FILES_TO_DOWNLOAD="gff3,rna,cds,protein,genome,seq-report"
-
-# Set this somewhere above if it is not already set
-# FILES_TO_DOWNLOAD="genome,gff3,rna,cds,protein,seq-report"
 
 while IFS=, read -r SPECIES_NAME ACCESSION; do
   OUTDIR="${GENOME_DIR}/${SPECIES_NAME}"
@@ -43,6 +43,7 @@ Hemicordylus_capensis,GCF_027244095.1
 Chamaeleo_calyptratus,GCA_043643385.1
 Sphaerodactylus_townsendi,GCF_021028975.2
 Varanus_acanthurus,GCA_050042745.1
+Anniella_stebbinsi,GCA_051312545.2
 EOF
 
 
@@ -95,6 +96,7 @@ EOF
 while IFS=, read -r SPECIES_NAME ACCESSION; do
   sbatch liftover.squamates.nonVGP.useDB.sh -s "$SPECIES_NAME" -a "$ACCESSION"
 done <<'EOF'
+Anniella_stebbinsi,GCA_051312545.2
 Cyrtopodion_scabrum,GCA_054791115.1
 Chamaeleo_calyptratus,GCA_043643385.1
 EOF
@@ -108,7 +110,7 @@ EOF
 while IFS=, read -r SPECIES_NAME ACCESSION; do
   sbatch liftover.squamates.VGP.useDB.sh -s "$SPECIES_NAME" -a "$ACCESSION"
 done <<'EOF'
-Anniella_stebbinsi,GCA_051312515.2
+Anniella_stebbinsi,GCA_051312545.2
 Shinisaurus_crocodilurus,GCA_021292165.1
 Furcifer_pardalis,GCA_030440675.1
 Cyclura_pinguis,GCA_030412105.1

@@ -1,16 +1,15 @@
-# Prepare genespace for liftover files
-cd /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/scripts
 
 # Create a list of all species with a lifted gff
 ```
-find /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs \
+find /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/ \
   -mindepth 1 -maxdepth 1 -type d \
   -regextype posix-extended \
   -regex '.*/[A-Z][a-z]+_[a-z]+' \
-  -printf '%f\n' > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
+  -printf '%f\n' > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt
 
-echo 'Elephas_maximus_indicus' > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
 ```
+rm -r /data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Anniella_stebbinsi/
+mv /data/Wilson_Lab/data/VGP_genomes_phase1/squamate_nonVGP_genomes/Anniella_stebbinsi /data/Wilson_Lab/data/VGP_genomes_phase1/genomes/
 
 ## Eliminate overlapping cds; Translate nucleic acid sequences for all species
 ```
@@ -18,10 +17,10 @@ cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Gen
 
 while IFS= read -r SPECIES; do
     echo "${SPECIES}"
-
-    gff="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/${SPECIES}/lifted.${SPECIES}.0_5.gff"
-    cds="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/${SPECIES}/lifted.${SPECIES}.0_5.cds"
-    trans_cds="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/${SPECIES}/lifted.${SPECIES}.0_5.translated.cds"
+    gff_matches=(/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/${SPECIES}/lifted.GC*.0_5.gff)
+    cds="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/${SPECIES}/lifted.${SPECIES}.0_5.cds"
+    trans_cds="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/${SPECIES}/lifted.${SPECIES}.0_5.translated.cds"
+    gff="${gff_matches[0]}"
 
     mapfile -t genomes < <(
     find "/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/${SPECIES}/ncbi_dataset/data" \
@@ -86,16 +85,17 @@ while IFS= read -r SPECIES; do
 
     transeq -sequence "$cds" -outseq "$trans_cds"
 
-done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
+done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt
 
 ```
 ## Prepare all bed and peptide files
 ```
 while IFS= read -r SPECIES; do
 
-  SYMDIR=/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/symlinks/${SPECIES}
-  gff="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/${SPECIES}/lifted.${SPECIES}.0_5.gff"
-  trans_cds="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/${SPECIES}/lifted.${SPECIES}.0_5.translated.cds"
+  SYMDIR=/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/symlinks/${SPECIES}
+  gff_matches=(/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/${SPECIES}/lifted.GC*.0_5.no_overlapping_cds.gff)
+  gff="${gff_matches[0]}"
+  trans_cds="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/${SPECIES}/lifted.${SPECIES}.0_5.translated.cds"
 
   mapfile -t genomes < <(
     find "/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/${SPECIES}/ncbi_dataset/data" \
@@ -120,12 +120,14 @@ while IFS= read -r SPECIES; do
   ln -sf "$trans_cds" "${SYMDIR}/${SPECIES}.translated.cds"
   ln -sf "$gff" "${SYMDIR}/${SPECIES}.gff"
   ln -sf $genome "${SYMDIR}/${SPECIES}.fa"
-done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
+
+done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt
 
 cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/scripts
 
-OUTDIR=/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_unfiltered
-Rscript 0b_prepare_genespace.lifted.R "$OUTDIR" /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/symlinks/
+OUTDIR=/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_unfiltered
+mkdir -p $OUTDIR
+Rscript 0b_prepare_genespace.lifted.R "$OUTDIR" /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/symlinks/
 ```
 # rename chromosome numbers in bed file
 Make a mapping file to replace chromosome names:
@@ -172,44 +174,45 @@ while IFS= read -r SPECIES; do
   wc -l /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/${SPECIES}.chromosome_mapping.tsv
 
   echo -e '\n'
-done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
+
+done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt
 ```
 # Using mapping file, replace chromosome names in bed with numbers/X
 ```
-mkdir -p /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_unfiltered/bed_reformatted/
+mkdir -p /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_unfiltered/bed_reformatted/
 
 while IFS= read -r SPECIES; do
     echo -e 'Starting' ${SPECIES}
-    Rscript remap_bed.liftover.R ${SPECIES} /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_unfiltered/
+    Rscript remap_bed.liftover.squamates_VGP.R ${SPECIES}
     echo -e 'Finished' ${SPECIES} '\n\n'
-done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
-
-while IFS= read -r SPECIES; do
-echo -e '\n' $SPECIES
-awk '{print $1}' /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_unfiltered/bed_reformatted/${SPECIES}.remapped.bed | sort -u | head
-echo -e '\n'
-awk '{print $1}' /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_unfiltered/bed/${SPECIES}.bed | sort -u | head
-echo -e '\n'
-done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
+done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt
 
 while IFS= read -r SPECIES; do
   echo -e '\n' $SPECIES
-  awk '{print $1}' /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_unfiltered/bed_reformatted/${SPECIES}.remapped.bed | sort -u | wc -l
-done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
+  awk '{print $1}' /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_unfiltered/bed_reformatted/${SPECIES}.remapped.bed | sort -u | head
+  echo -e '\n'
+  awk '{print $1}' /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_unfiltered/bed/${SPECIES}.bed | sort -u | head
+  echo -e '\n'
+done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt
+
+while IFS= read -r SPECIES; do
+echo -e '\n' $SPECIES
+awk '{print $1}' /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_unfiltered/bed_reformatted/${SPECIES}.remapped.bed | sort -u | wc -l
+done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt
 
 
 
 while IFS= read -r SPECIES; do
-mv /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_unfiltered/bed_reformatted/${SPECIES}.remapped.bed \
-   /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_unfiltered/bed_reformatted/${SPECIES}.bed
-done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
+mv /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_unfiltered/bed_reformatted/${SPECIES}.remapped.bed \
+   /data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_unfiltered/bed_reformatted/${SPECIES}.bed
+done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt
 
 ```
 
 ## Remove W and Y chromosomes from bed files, and all scaffolds
 ```
-INDIR=/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_unfiltered/
-OUTDIR=/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_filtered/
+INDIR=/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_unfiltered/
+OUTDIR=/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_filtered/
 
 
 INBED="${INDIR}/bed_reformatted"
@@ -239,6 +242,7 @@ for bed in "$INBED"/*.bed; do
   echo "Wrote $outbed"
 done
 
+
 # 2) Filter peptide FASTAs to match filtered BEDs (keep only genes still present)
 #    - assumes peptide file name matches bed base name: SPECIES.bed <-> SPECIES.fa
 for bed in "$OUTBED"/*.bed; do
@@ -264,13 +268,13 @@ done
 ```
 # Create requisite genespace directory structure
 ```
-BED_DIR="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_filtered/usable_bed"
-PEP_DIR="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/Genespace_input_filtered/usable_peptide"
+BED_DIR="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_filtered/usable_bed"
+PEP_DIR="/data/Wilson_Lab/data/VGP_genomes_phase1/lifted_gffs/squamate_VGP_lifted_gffs/Genespace_input_filtered/usable_peptide"
 
 REF_BED="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Figure/Option2/bed/Gallus_gallus.bed"
 REF_PEP="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Figure/Option2/peptide/Gallus_gallus.fa"
 
-GENESPACEDIR=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared_liftover
+GENESPACEDIR=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared_squamates_VGP
 
 mkdir -p ${GENESPACEDIR}
 
@@ -289,36 +293,36 @@ while IFS= read -r SPECIES; do
     ln -sf "$REF_BED" "${SPECIES}/bed/Gallus_gallus.bed"
     ln -sf "$REF_PEP" "${SPECIES}/peptide/Gallus_gallus.fa"
     
-done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
+done < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt
 
 ```
 # Submit genespace
+# replace chr 3 with Z in Shinisaurus
+awk 'BEGIN{OFS="\t"} {$1=($1=="3"?"Z":$1); print}' \
+../Gallus_gallus/sexshared_squamates_VGP/Shinisaurus_crocodilurus/bed/Shinisaurus_crocodilurus.bed \
+> tmp && mv tmp ../Gallus_gallus/sexshared_squamates_VGP/Shinisaurus_crocodilurus/bed/Shinisaurus_crocodilurus.bed
+
 # Remake sexchrom_accessions.csv
 ```
-find /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared_liftover -path "*/bed/*.bed" | while read -r bed; do
+find /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared_squamates_VGP -path "*/bed/*.bed" | while read -r bed; do
     species=$(basename "$bed" .bed)
     awk -v sp="$species" '
         !seen[$1]++ && $1 !~ /^[0-9]+$/ {
             print sp "\t" $1
         }
     ' "$bed"
-done > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv
+done > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.squamates_VGP.csv
 
-sort -u  /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv.tmp
-mv /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv.tmp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv
+sort -u  /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.squamates_VGP.csv | grep -v Gallus_gallus > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.squamates_VGP.csv.tmp
+mv /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.squamates_VGP.csv.tmp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.squamates_VGP.csv
+
+echo -e 'Shinisaurus_crocodilurus\tZ' > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.squamates_VGP.csv
 ```
 # Submit genespace
 ```
 cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/scripts
-grep 'Girar' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv.tmp
-grep 'Hopli' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv >> /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv.tmp
-mv /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv.tmp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv
-
-grep 'Girar' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv | awk '{print $1}' > /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
-grep 'Hoplias' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/species.sexchr.for_genespace_array.lifted.csv | grep X1 | awk '{print $1}' >> /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt
-
-N=$(wc -l < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.txt)
-sbatch --array=1-${N} 1b_genespace_array.lifted.sh Gallus_gallus
+N=$(wc -l < /data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/species_with_lifted_genomes.squamates_VGP.txt)
+sbatch --array=1-${N} 1b_genespace_array.squamates_VGP.sh Gallus_gallus
 ```
 
 # Species with only bed and peptide subdirs
@@ -332,3 +336,5 @@ Rhinolophus_yonghoiseni -- no annotated sex chr in genome; Chr 8 is syntenic wit
 
 sbatch --array=1-4 1b_genespace_array.lifted.No_Sex_Chr_Annot.sh Gallus_gallus
 
+# Copy finished directories into full genespace directory
+cp -r /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared_liftover/* /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/
