@@ -7,6 +7,7 @@ library(devtools)
 devtools::install_github("jtlovell/GENESPACE")
 ```
 # Analyses of synteny of sex chromosomes across the VGP Phase 1 genomes
+```
 OUTDIR=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/
 
 
@@ -17,7 +18,7 @@ mkdir -p ${OUTDIR}/reference_lists
 
 
 cd ${OUTDIR}/scripts
-
+```
 ## Make list of sex chromosomes from genomes with gff
 ```
 python3 0a_filter_sexchrom_to_gff.py ${OUTDIR}/reference_lists
@@ -131,18 +132,6 @@ for sp in "${species[@]}"; do
   echo "$f -> $out"
 done
 ```
-
-grep '>' ${HAS_DIR}/Xenentodon_cancila/Xenentodon_cancila.contigs_only.fna
-grep '>' ${HAS_DIR}/Pholidichthys_leucotaenia/Pholidichthys_leucotaenia.contigs_only.fna
-grep '>' ${HAS_DIR}/Porphyrio_hochstetteri/Porphyrio_hochstetteri.contigs_only.fna
-grep '>' ${HAS_DIR}/Vipera_latastei/Vipera_latastei.contigs_only.fna
-grep '>' ${HAS_DIR}/Gastrophryne_carolinensis/Gastrophryne_carolinensis.contigs_only.fna
-grep '>' ${HAS_DIR}/Thomomys_bottae/Thomomys_bottae.contigs_only.fna
-grep '>' ${HAS_DIR}/Fundulus_diaphanus/Fundulus_diaphanus.contigs_only.fna
-grep '>' ${HAS_DIR}/Lycaon_pictus/Lycaon_pictus.contigs_only.fna
-grep '>' ${HAS_DIR}/Morphnus_guianensis/Morphnus_guianensis.contigs_only.fna
-grep '>' ${HAS_DIR}/Guaruba_guaruba/Guaruba_guaruba.contigs_only.fna
-grep '>' ${HAS_DIR}/Trichechus_inunguis/Trichechus_inunguis.contigs_only.fna
 
 ## Filter ${SPECIES}/${SPECIES}.gff to just regions kept in file ${SPECIES}/${SPECIES}.contigs_only.fna
 ```
