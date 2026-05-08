@@ -144,7 +144,7 @@ Gene names in these GFFs are not consistent across species. The above script out
 I googled the description and find the gene name, using sites that I trust like Gene Cards or UniProt. Afterwards, I put the entire list of GeneName, GeneDescription, and GeneName_Revised columns into ChatGPT and asked it to double check my conversions. ChatGPT caught a few that I'd accidentally labelled using the protein name instead of the gene name, but it also gave incorrect gene names for some as well so be sure to thoroughly check Chat's work.
 
 For example, I added a new column to z_par_genes.tsv named "GeneName_Revised" and recoded these variously named genes to ACAA2.
-```
+
 | Species | Chromosome | StartPos | StopPos | GeneName | GeneDescription | GeneName_Revised |
 |---|---|---:|---:|---|---|---|
 | Aegotheles_albertisi | CM078494.1 | 2445494 | 2458490 | AAHN32_012953 | 3-ketoacyl-CoA thiolase%2C mitochondrial-like | ACAA2 |
@@ -153,7 +153,7 @@ For example, I added a new column to z_par_genes.tsv named "GeneName_Revised" an
 | Patagioenas_fasciata | NC_092560.1 | 83911857 | 83925983 | LOC136114726 | 3-ketoacyl-CoA thiolase%2C mitochondrial-like | ACAA2 |
 | Mergus_octosetaceus | CM072318.1 | 2435566 | 2447305 | V3H86_014483 | 3-ketoacyl-CoA thiolase%2C mitochondrial-like | ACAA2 |
 | Sarcoramphus_papa | CM075626.1 | 93109717 | 93131945 | WM294_016710 | 3-ketoacyl-CoA thiolase%2C mitochondrial-like | ACAA2 |
-```
+
 ## 6. Curate a list of putatively conserved PAR genes (top 15):
 These genes each appear in 9-12 species with confident PARs. This cutoff is arbitrary, but I figured 15 conserved genes would be sufficient to identify the PAR region in a genome if it is there.
 ```
