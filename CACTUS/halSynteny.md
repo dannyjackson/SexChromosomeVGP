@@ -18,8 +18,14 @@ cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/cac
 
 HAL_FILE=/data/Wilson_Lab/data/VGP_genomes_phase1/cactus_alignments/vgp-577way-v1.hal
 
-halValidate ${HAL_FILE}
 
-halStats ${HAL_FILE}
+Q=GCF_016700215.2
+T=GCA_009914755.4
 
-halSynteny ${HAL_FILE} test.psl --queryGenome GCF_016700215.2 --targetGenome GCA_009914755.4
+# Make output less detailed: fewer/smaller fragments, faster post-processing
+halSynteny ${HAL_FILE} ${Q}_vs_${T}.psl \
+  --queryGenome ${Q} \
+  --targetGenome ${T} \
+  --minBlockSize 1000000 \
+  --maxAnchorDistance 1000000 \
+  --cacheBytes 1000000000

@@ -1,3 +1,5 @@
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/scripts
+
 # Chondricthyes
 ```
 mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Chondrichthyes
@@ -20,6 +22,16 @@ for SPECIES in \
   Scyliorhinus_canicula \
   Cetorhinus_maximus \
   Carcharodon_carcharias
+do
+
+
+for SPECIES in \
+  Raja_brachyura \
+  Amblyraja_radiata \
+  Narcine_bancroftii \
+  Pristis_pectinata \
+  Hypanus_sabinus \
+  Mobula_birostris
 do
   cp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/${SPECIES}/bed/${SPECIES}.bed \
      /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Chondrichthyes/bed/
@@ -194,7 +206,10 @@ for SPECIES in \
   Pelecanus_crispus \
   Theristicus_caerulescens \
   Platalea_leucorodia \
-  Morus_bassanus
+  Morus_bassanus \
+  Ciconia_maguari \
+  Calonectris_borealis \
+  Spheniscus_humboldti
 do
   cp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/${SPECIES}/bed/${SPECIES}.bed \
      /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/bed/
@@ -272,7 +287,7 @@ mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analys
 
 for SPECIES in \
   Leptosomus_discolor \
-  Pogoniulus_pusillus \
+  Trogon_surrucura \
   Dryobates_pubescens \
   Colius_striatus
 do
@@ -319,11 +334,51 @@ mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analys
 mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/peptide
 
 for SPECIES in \
-  Poecile_atricapillus \
+  Taeniopygia_guttata \
   Hirundo_rustica \
   Zosterops_lateralis \
   Sylvia_atricapilla \
   Sylvia_borin
+do
+  cp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/${SPECIES}/bed/${SPECIES}.bed \
+     /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/bed/
+
+  cp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/${SPECIES}/peptide/${SPECIES}.fa \
+     /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/peptide/
+done
+
+sbatch 1g_genespace.sh /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/
+```
+# Poecile
+```
+CLADE="Poecile"
+mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}
+mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/bed/
+mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/peptide
+
+for SPECIES in \
+  Poecile_atricapillus \
+  Taeniopygia_guttata
+do
+  cp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/${SPECIES}/bed/${SPECIES}.bed \
+     /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/bed/
+
+  cp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/${SPECIES}/peptide/${SPECIES}.fa \
+     /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/peptide/
+done
+
+sbatch 1g_genespace.sh /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/
+```
+# Acridotheres
+```
+CLADE="Acridotheres"
+mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}
+mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/bed/
+mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/peptide
+
+for SPECIES in \
+  Acridotheres_tristis \
+  Taeniopygia_guttata
 do
   cp /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/${SPECIES}/bed/${SPECIES}.bed \
      /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/${CLADE}/bed/

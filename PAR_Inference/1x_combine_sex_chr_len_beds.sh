@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export SEXCHRLEN=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_phylogeny/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
+export SEXCHRLEN=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_phylogeny/VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
 
 sed -i 's/Guaruba_guaruba/Guaruba_guarouba/g' $SEXCHRLEN
 

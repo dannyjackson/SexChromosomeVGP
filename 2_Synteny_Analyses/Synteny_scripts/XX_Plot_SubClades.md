@@ -215,7 +215,8 @@ f <- file.path(
 
 load(f, verbose = TRUE)
 
-SPECIES=c("Glossophaga_mutica", "Artibeus_intermedius")
+
+SPECIES=c("Artibeus_intermedius", "Glossophaga_mutica")
 
 roi <- data.frame( 
     genome = "Artibeus_intermedius", 
@@ -223,24 +224,29 @@ roi <- data.frame(
     color = c("#E69F00")
     )
 
+
 ordFun <- function(x) 
   data.table::frank(
-    list(grepl("[a-zA-Z]", x), 
-         as.numeric(gsub("[a-zA-Z]", "", x))), 
-    ties.method = "random")
+    list(grepl("[a-zA-Z]", x),
+         as.numeric(gsub("[a-zA-Z]", "", x))),
+    ties.method = "random"
+  )
 
 ggthemes <- ggplot2::theme(
-  panel.background = ggplot2::element_rect(fill = "white"))
+  panel.background = ggplot2::element_rect(fill = "white")
+)
 
-ripDat <- plot_riparian( 
-    gsParam = gsParam, 
-    highlightBed = roi, 
-    genomeIDs = SPECIES, 
-    refChrOrdFun = ordFun,
-    addThemes = ggthemes,
-    chrFill = "lightgrey",
-    backgroundColor = "#ececec", 
-    reorderBySynteny = FALSE)
+ripDat <- plot_riparian(
+  gsParam = gsParam,
+  genomeIDs = SPECIES,
+  refGenome = "Artibeus_intermedius",   # add this
+  highlightBed = roi,
+  refChrOrdFun = ordFun,
+  addThemes = ggthemes,
+  chrFill = "lightgrey",
+  backgroundColor = "#ececec",          # keep this non-NA
+  reorderBySynteny = FALSE
+)
 
 p_list <- ripDat$plot
 p <- p_list[[1]]
@@ -636,7 +642,7 @@ ggsave(
 ```
 for SPECIES in \
   Leptosomus_discolor \
-  Pogoniulus_pusillus \
+  Trogonsurrucura \
   Dryobates_pubescens \
   Colius_striatus
 

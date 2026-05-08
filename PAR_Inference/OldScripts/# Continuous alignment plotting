@@ -1,140 +1,9 @@
 # Continuous alignment plotting
 
-setwd("/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_inference/alignment/continuous_percentID")
 
-dir_in <- "/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/continuous_percentID"
-files <- list.files(dir_in, pattern = "\\.refqry\\.csv$", full.names = TRUE)
+setwd("/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_inference/alignment/continuous_percentID")
 
-library(data.table)
-library(ggplot2)
-library(patchwork)
-library(readr)
-
-infile <- "/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/continuous_percentID/Homo_sapiens_YtoX.aln.refqry.csv"
-
-dt <- fread(infile)
-
-info <- read_tsv("/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_inference/alignment/bed_sexchr_info_with_matches.tsv",
-                 show_col_types = FALSE)
-
-# Coerce + keep only needed columns
-dt <- dt[, .(
-  chrom_qry = as.character(chrom_qry),
-  qs = as.integer(bp_start_qry),
-  qe = as.integer(bp_end_qry),
-  chrom_ref = as.character(chrom_ref),
-  rs = as.integer(bp_start_ref),
-  re = as.integer(bp_end_ref),
-  pid = as.numeric(percent_identity_qry)
-)]
-
-# Basic cleaning
-dt <- dt[!is.na(pid) & qe > qs & re > rs]
-
-# Factor ordering (keeps rows aligned between panels)
-dt[, chrom_pair := factor(
-  paste(chrom_qry, "→", chrom_ref),
-  levels = unique(paste(chrom_qry, "→", chrom_ref))
-)]
-
-# Numeric y for rectangles
-dt[, y := as.numeric(chrom_pair)]
-dt[, `:=`(ymin = y - 0.45, ymax = y + 0.45)]
-
-# ----------------------------
-# Query panel
-# ----------------------------
-p_qry <- ggplot(dt) +
-  geom_rect(aes(
-    xmin = qs,
-    xmax = qe,
-    ymin = ymin,
-    ymax = ymax,
-    fill = pid
-  )) +
-  scale_y_continuous(
-    breaks = seq_along(levels(dt$chrom_pair)),
-    labels = levels(dt$chrom_pair),
-    expand = expansion(mult = 0)
-  ) +
-  labs(
-    x = "Query position (bp)",
-    y = NULL,
-    title = "Query"
-  ) +
-  theme_bw(base_size = 12) +
-  theme(
-    panel.grid = element_blank(),
-    axis.text.y = element_text(size = 9)
-  )
-
-# ----------------------------
-# Reference panel
-# ----------------------------
-p_ref <- ggplot(dt) +
-  geom_rect(aes(
-    xmin = rs,
-    xmax = re,
-    ymin = ymin,
-    ymax = ymax,
-    fill = pid
-  )) +
-  scale_y_continuous(
-    breaks = seq_along(levels(dt$chrom_pair)),
-    labels = NULL,
-    expand = expansion(mult = 0)
-  ) +
-  labs(
-    x = "Reference position (bp)",
-    y = NULL,
-    title = "Reference"
-  ) +
-  theme_bw(base_size = 12) +
-  theme(
-    panel.grid = element_blank(),
-    axis.text.y = element_blank()
-  )
-
-# ----------------------------
-# Combine panels
-# ----------------------------
-p <- (p_qry | p_ref) +
-  plot_layout(widths = c(1, 1)) +
-  plot_annotation(
-    title = "Continuous percent identity: query vs reference",
-    theme = theme(plot.title = element_text(size = 14, face = "bold"))
-  )
-
-
-png("continuous_percentID.Homo_sapiens.png", width = 2000, height = 1000, res = 200)
-print(p)
-dev.off()
-
-png("continuous_percentID.png", width = 2000, height = 9000, res = 200)
-print(p)
-dev.off()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-setwd("/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_inference/alignment/continuous_percentID")
-
-dir_in <- "/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/minimap2/continuous_percentID"
+dir_in <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID"
 files <- list.files(dir_in, pattern = "\\.refqry\\.csv$", full.names = TRUE)
 
 library(data.table)
@@ -159,7 +28,6 @@ read_one <- function(f) {
   )]
 
   # Basic cleaning
-  dt <- dt[!is.na(pid) & qe > qs & re > rs]
   if (nrow(dt) == 0) return(NULL)
 
   # File label (strip extension)
@@ -268,7 +136,7 @@ p <- (p_qry | p_ref) +
 height_in <- max(8, n_rows * 0.09)
 
 ggsave(
-  filename = "continuous_percentID.ALLFILES.png",
+  filename = "continuous_percentID.ALLFILES.apr2026.png",
   plot = p,
   width = 12,
   height = height_in,

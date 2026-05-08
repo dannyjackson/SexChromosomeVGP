@@ -1,13 +1,11 @@
 # Robust ALL-by-AssemblyTech plotting script (phylo-ordered)
-library(data.table)
 library(ggplot2)
-library(patchwork)
 library(ape)
 
 
 tree_file <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk"
 
-SPECIES <- c("Homo_sapiens", "Gallus_gallus", "Podarcis_raffonei", "Hyla_sarda", "Gasterosteus_aculeatus", "Narcine_bancroftii")
+SPECIES <- c("Carcharodon_carcharias", "Gasterosteus_aculeatus", "Hyla_sarda", "Podarcis_raffonei", "Gallus_gallus", "Homo_sapiens")
 
 tr_full <- ape::read.tree(tree_file)
 

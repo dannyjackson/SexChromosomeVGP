@@ -76,11 +76,6 @@ cd $RAY
 transeq -sequence Narcine_bancroftii.cds -outseq Narcine_bancroftii.translated.cds
 
 cd $FROG
-gffread -x Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.cds -g Pseudacris_triseriata.fna Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.gff
-
-transeq -sequence Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.cds -outseq Pseudacris_triseriata.translated.cds
-
-cd /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Hyla_sarda
 transeq -sequence Hyla_sarda.cds -outseq Hyla_sarda.translated.cds
 
 ```
@@ -92,7 +87,7 @@ R
 
 library(GENESPACE)
 
-SPECIES=c("Homo_sapiens", "Gallus_gallus", "Anolis_sagrei", "Podarcis_raffonei", "Hoplias_malabaricus", "Narcine_bancroftii")
+SPECIES=c("Homo_sapiens", "Gallus_gallus", "Carcharodon_carcharias", "Podarcis_raffonei", "Gasterosteus_aculeatus", "Hyla_sarda")
 
 parsedPaths <- parse_annotations(
   rawGenomeRepo = "/data/Wilson_Lab/data/VGP_genomes_phase1", 
@@ -103,70 +98,7 @@ parsedPaths <- parse_annotations(
   presets = "ncbi", 
   genespaceWd = "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Figure")
 
-SPECIES=c("Pseudacris_triseriata")
-
-parsedPaths <- parse_annotations(
-  rawGenomeRepo = "/data/Wilson_Lab/data/VGP_genomes_phase1", 
-  genomeDirs = SPECIES,
-  genomeIDs = SPECIES,
-  gffString = "gff",
-  faString = "translated.cds",
-  headerEntryIndex = 1,
-  headerStripText = "rna-|_[0-9]+$",
-  genespaceWd = "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Figure")
-
 ```
-Make a mapping file to replace Pseudacris triseriata chromosome names:
-```
-grep '^>' /data/Wilson_Lab/data/VGP_genomes_phase1/No_YW/Pseudacris_triseriata/Pseudacris_triseriata.fna |
-sed 's/^>//' |
-awk '
-{
-  acc=$1
-  chr=""
-  if (match($0, /chromosome[[:space:]]+([0-9XYWZ]+)/, m)) chr=m[1]
-  if (chr!="") print acc "\t" chr
-}' >  /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/Pseudacris_triseriata.chromosome_mapping.tsv
-
-# Replace chromosome 1 with X in mapping file
-awk 'BEGIN{OFS="\t"} $2==1{$2="X"} {print}' \
-  /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/Pseudacris_triseriata.chromosome_mapping.tsv \
-  > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/Pseudacris_triseriata.chromosome_mapping.tsv.tmp \
-&& mv /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/Pseudacris_triseriata.chromosome_mapping.tsv.tmp \
-      /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/Pseudacris_triseriata.chromosome_mapping.tsv
-
-# Using mapping file, replace chromosome names in bed with numbers/X
-
-cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Figure
-
-R
-
-library(readr)
-
-bed <- read_tsv("bed/Pseudacris_triseriata.bed", col_names = FALSE, show_col_types = FALSE)
-
-map_tbl <- read_tsv(
-  "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/Pseudacris_triseriata.chromosome_mapping.tsv",
-  col_names = FALSE,
-  show_col_types = FALSE
-)
-
-# make a named vector: names = accessions, values = chrom labels
-map_vec <- setNames(map_tbl$X2, map_tbl$X1)
-
-# remap, leaving anything unmapped unchanged
-bed$X1 <- ifelse(bed$X1 %in% names(map_vec), unname(map_vec[bed$X1]), bed$X1)
-
-write_tsv(bed, "bed/Pseudacris_triseriata.remapped.bed", col_names = FALSE)
-
-q()
-
-mv bed/Pseudacris_triseriata.remapped.bed bed/Pseudacris_triseriata.bed
-
-# Replace chromosome 12 with X in Narcine bancroftii
-
-awk 'BEGIN{OFS="\t"} $1=="12"{$1="X"} {print}' bed/Narcine_bancroftii.bed > bed/Narcine_bancroftii.bed.tmp \
-&& mv bed/Narcine_bancroftii.bed.tmp bed/Narcine_bancroftii.bed
 
 ```
 # Run Genespace

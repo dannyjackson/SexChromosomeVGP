@@ -4,6 +4,10 @@ cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Gen
 
 sbatch 1b_genespace.singleinstance.sh Gallus_gallus ${SPECIES} ${OUTDIR}
 
+# Chondrichthyes
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/scripts
+sbatch 1g_genespace.sh /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Chondrichthyes
+
 # Anurans
 ## Hyla sarda
 Whichever chr is syntenic to Xenopus chr 4 is the SC
@@ -131,7 +135,7 @@ awk 'BEGIN{OFS="\t"} {$1=($1=="X"?"Unnamed":$1); print}' \
 bed/Raja_brachyura.bed \
 > tmp.bed && mv tmp.bed bed/Raja_brachyura.bed
 
-# Replace chr 46 with X
+# Replace chr 40 with X
 awk 'BEGIN{OFS="\t"} {$1=($1=="40"?"X":$1); print}' \
 bed/Raja_brachyura.bed \
 > tmp.bed && mv tmp.bed bed/Raja_brachyura.bed
@@ -495,7 +499,7 @@ done <<EOF
 Tiliqua_scincoides,7
 EOF
 
-# Ambystoma_mexicanum_x_Amblystoma_tigrinum
+# Ambystoma_mexicanum_x_Ambystoma_tigrinum
 
 SPECIES=Ambystoma_mexicanum_x_Ambystoma_tigrinum
 WORKDIR="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/${SPECIES}"
@@ -539,3 +543,23 @@ EOF
 done <<EOF
 Tiliqua_scincoides,7
 EOF
+
+# Newly identified sex chrs
+
+
+SPECIES=Eleutherodactylus_coqui
+WORKDIR="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/Gallus_gallus/sexshared/${SPECIES}"
+mkdir -p "$WORKDIR"
+cd "$WORKDIR" || exit 1
+mkdir -p bed peptide
+
+cp "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/sexshared/usable_bed/${SPECIES}.bed" bed/
+cp "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/sexshared/usable_peptide/${SPECIES}.fa" peptide/
+
+
+cp "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/sexshared/usable_bed/Gallus_gallus.bed" bed/
+cp "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/sexshared/usable_peptide/Gallus_gallus.fa" peptide/
+
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/scripts || exit 1
+
+sbatch 1g_genespace.sh "$WORKDIR"

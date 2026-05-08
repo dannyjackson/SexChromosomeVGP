@@ -1,26 +1,16 @@
-# Plotting Genespace
-
-```
-R
-
 library(GENESPACE)
 library(ggplot2)
-wd <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Figure"
 
-gpar <- init_genespace(
-  wd = wd,
-  path2mcscanx = "/vf/users/jacksondan/conda/envs/genespace/bin/")
+load('/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Synteny_Figure/results/gsParams.rda')
 
-out <- run_genespace(gpar, overwrite = F)
+wd <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/VGP_DF_Synteny_Figure/"
 
-
-
-SPECIES=c("Homo_sapiens", "Gallus_gallus", "Anolis_sagrei", "Podarcis_raffonei", "Pseudacris_triseriata", "Hoplias_malabaricus", "Narcine_bancroftii") 
+SPECIES=c("Carcharodon_carcharias", "Gasterosteus_aculeatus", "Hyla_sarda", "Podarcis_raffonei", "Gallus_gallus", "Homo_sapiens") 
 
 roi <- data.frame( 
-    genome = c("Homo_sapiens", "Gallus_gallus", "Anolis_sagrei", "Podarcis_raffonei", "Pseudacris_triseriata", "Hoplias_malabaricus", "Hoplias_malabaricus", "Narcine_bancroftii"), 
-    chr = c("X", "Z", "X", "Z", "X", "X1", "X2", "X"), 
-    color = c("#332288", "#88CCEE", "#44AA99", "#999933", "#000000", "#CC6677", "#CC6677", "#882255")) 
+    genome = c("Homo_sapiens", "Gallus_gallus", "Podarcis_raffonei", "Hyla_sarda", "Gasterosteus_aculeatus", "Carcharodon_carcharias"), 
+    chr = c("X", "Z", "Z", "X", "X", "X"), 
+    color = c("#E69F00", "#00796B", "#80CBC4", "#984EA3", "#56B4E9", "#0072B2")) 
 
 ordFun <- function(x) 
   data.table::frank(
@@ -32,36 +22,24 @@ ggthemes <- ggplot2::theme(
   panel.background = ggplot2::element_rect(fill = "white"))
 
 ripDat <- plot_riparian( 
-    gsParam = out, 
+    gsParam = gsParam, 
     highlightBed = roi, 
     refGenome = "Homo_sapiens", 
     genomeIDs = SPECIES, 
+    minChrLen2plot = 1,
     refChrOrdFun = ordFun,
     addThemes = ggthemes,
     chrFill = "lightgrey",
     backgroundColor = "#ffffff", 
+    scaleGapSize = .75,
     reorderBySynteny = FALSE)
 
 p_list <- ripDat$plot
 p <- p_list[[1]]
 
 ggsave( 
-    filename = "VGP_MainDF_Figure.10x6.pdf", 
+    filename = "VGP_MainDF_Figure.10x6.gapProp.pdf", 
     plot = p, 
     width = 10, 
     height = 6, 
-    units = "in" )
-
-ggsave( 
-    filename = "VGP_MainDF_Figure.10x4.pdf", 
-    plot = p, 
-    width = 10, 
-    height = 4, 
-    units = "in" )
-
-ggsave( 
-    filename = "VGP_MainDF_Figure.10x3.pdf", 
-    plot = p, 
-    width = 10, 
-    height = 3, 
     units = "in" )

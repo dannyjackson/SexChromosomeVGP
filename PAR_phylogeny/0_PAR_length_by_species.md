@@ -26,7 +26,7 @@ cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/PAR_phylogeny
 module load R
 
 export TREE=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/roadies_v1.1.16b.nwk
-export ANN=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/annotations.tsv
+export ANN=/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/annotations.tsv
 export BEDDIR=/data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/datafiles/PAR_annotations
 export SEXCHRLEN=VGP_freeze_hap1_combined_sexchroms_seq_reports.tsv
 
@@ -108,3 +108,4 @@ Synteny Pipeline
 1a. Identify list(s) of genomes that we care about
 2. Liftover annotations to unannotated genomes of interest
 3. Engage Adrian 
+

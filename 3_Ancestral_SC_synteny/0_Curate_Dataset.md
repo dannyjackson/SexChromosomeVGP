@@ -1,19 +1,29 @@
 # Goal:
 Create a plot that has chicken chromosomes on the X axis and unique SC systems on the Y. For each unique SC on the Y, there will be a horizontal line from start-stop of each syntenic block for a given clade. This will be min and max of all species that have that SC.
-
 # Dataset:
 ## Sharks and Rays
 ```
 Carcharodon_carcharias
+Narcine_bancroftii
+Hypanus_sabinus
+Mobula_birostris
 ```
 ## Ray finned fish
 ```
 Colia_mystus
+Hoplias_malabaricus
 Argentina_silus
+Aulostomus_maculatus
+Girardinichthys_multiradiatus
+Echiichthys_vipera
 Gasterosteus_aculeatus
 ```
 ## Mammals
 ```
+# Monotremes
+Tachyglossus_aculeatus
+Ornithorhynchus_anatinus
+# Therian
 Sarcophilus_harrisii
 ```
 ## Lepidosaurs
@@ -21,24 +31,39 @@ Sarcophilus_harrisii
 Cyclura_pinguis
 Vipera_latastei
 Podarcis_raffonei
+Shinisaurus_crocodilurus
+Anniella_stebbinsi
+Furcifer_pardalis
+Anolis_sagrei
 ```
 ## Turtles
 ```
 ```
-## Frogs
+## Amphibians
 ```
-Pseudacris_triseriata
+# Pseudacris_triseriata
 Hyla_sarda
+# Ambystoma_mexicanum_x_Amblystoma_tigrinum
 ```
 ## Birds
 ```
 Gallus_gallus
+Taeniopygia_guttata
 ```
+# Estimate chromosome lengths of chicken genome
+```
+# Set working directory
+
+mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/All_Vertebrate_Sex_Chromosomes
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/All_Vertebrate_Sex_Chromosomes
+
 module load samtools
 samtools faidx /data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Gallus_gallus/ncbi_dataset/data/GCF_016700215.2/GCF_016700215.2_bGalGal1.pat.whiteleghornlayer.GRCg7w_genomic.fna
 ../Gallus_gallus/combined_phaseblks/
-
 ```
+# Create gg_chr_len.csv
+```
+cat > gg_chr_len.csv <<'EOF'
 1,196449156
 2,149539284
 3,110642502
@@ -79,17 +104,80 @@ samtools faidx /data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Gallus_gallus/nc
 38,667312
 39,177356
 Z,86044486
+EOF
 ```
-# Save as test_SC.list.txt
+# set up environment
 ```
-Carcharodon_carcharias
-Colia_mystus
-Argentina_silus
-Gasterosteus_aculeatus
-Sarcophilus_harrisii
-Cyclura_pinguis
-Vipera_latastei
-Podarcis_raffonei
+mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/All_Vertebrate_Sex_Chromosomes
+
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/Genespace/All_Vertebrate_Sex_Chromosomes
+```
+# Create Ancestral_SC_list.txt
+```
+cat > Ancestral_SC_list.txt <<'EOF'
+Carcharodon_carcharias,Chondricthyes
+Scyliorhinus_canicula,
+Heterodontus_francisci,Chondricthyes
+Colia_mystus,Actinopterygii
+Hoplias_malabaricus,Actinopterygii
+Argentina_silus,Actinopterygii
+Aulostomus_maculatus,Actinopterygii
+Girardinichthys_multiradiatus,Actinopterygii
+Echiichthys_vipera,Actinopterygii
+Gasterosteus_aculeatus,Actinopterygii
+Tachyglossus_aculeatus,Mammalia
+Ornithorhynchus_anatinus,Mammalia
+Sarcophilus_harrisii,Mammalia
+Monodelphis_domestica,Mammalia
+Dromiciops_gliroides,Mammalia
+Cyclura_pinguis,Lepidosauria
+Vipera_latastei,Lepidosauria
+Podarcis_siculus,Lepidosauria
+Podarcis_muralis,Lepidosauria
+Podarcis_liolepis,Lepidosauria
+Podarcis_bocagei,Lepidosauria
+Podarcis_vaucheri,Lepidosauria
+Podarcis_pityusensis,Lepidosauria
+Podarcis_tiliguerta,Lepidosauria
+Podarcis_raffoei,Lepidosauria
+Podarcis_filfolensis,Lepidosauria
+Podarcis_melisellensis,Lepidosauria
+Podarcis_gaigeae,Lepidosauria
+Podarcis_cretensis,Lepidosauria
+Podarcis_erhardii,Lepidosauria
+Shinisaurus_crocodilurus,Lepidosauria
+Anniella_stebbinsi,Lepidosauria
+Furcifer_pardalis,Lepidosauria
+Anolis_sagrei,Lepidosauria
+Hyla_sarda,Amphibia
+Taeniopygia_guttata,Aves
+Anser_anser,Aves
+Larus_fuscus,Aves
+EOF
+```
+# Save this as palette.Ancestral.txt
+```
+cat > palette.Ancestral.txt <<'EOF'
+Monotremes,#E69F00
+Therian_mammals,#E69F00
+Aves,#00796B
+Cyclura_pinguis,#80CBC4
+Vipera_latastei,#80CBC4
+Lacertids,#80CBC4
+Shinisaurus_crocodilurus,#80CBC4
+Anniella_stebbinsi,#80CBC4
+Furcifer_pardalis,#80CBC4
+Anolis_sagrei,#80CBC4
+Hyla_sarda,#984EA3
+Colia_mystus,#56B4E9
+Hoplias_malabaricus,#56B4E9
+Argentina_silus,#56B4E9
+Aulostomus_maculatus,#56B4E9
+Girardinichthys_multiradiatus,#56B4E9
+Echiichthys_vipera,#56B4E9
+Gasterosteus_aculeatus,#56B4E9
+Chondricthyes,#0072B2
+EOF
 ```
 # Subset combined_phased_blks
 ```
@@ -98,11 +186,14 @@ BEGIN {
     OFS=","
 }
 
-# species list
+# species list: Species,Clade
 FNR==NR {
     gsub(/\r/, "", $1)
+    gsub(/\r/, "", $2)
+
     if ($1 != "") {
         want[$1] = 1
+        clade[$1] = $2
         order[++n] = $1
     }
     next
@@ -111,6 +202,7 @@ FNR==NR {
 # header row of CSV
 FNR==1 {
     for (i=1; i<=NF; i++) {
+        gsub(/\r/, "", $i)
         col[$i] = i
     }
     next
@@ -122,7 +214,7 @@ FNR==1 {
     if (!(sp in want)) next
     if ($(col["genome1"]) == "Gallus_gallus") next
     if ($(col["genome2"]) != "Gallus_gallus") next
-    if ($(col["chr1"]) != "X" && $(col["chr1"]) != "Z") next
+    if ($(col["chr1"]) != "X" && $(col["chr1"]) != "X1" && $(col["chr1"]) != "Z" && $(col["chr1"]) != "Z1") next
 
     region = $(col["chr2"]) ":" $(col["startBp2"]) "-" $(col["endBp2"])
 
@@ -138,145 +230,98 @@ FNR==1 {
 }
 
 END {
-    print "Species","Gg_regions"
+    print "Species","Clade","Gg_regions"
     for (i=1; i<=n; i++) {
         sp = order[i]
-        print sp, regions[sp]
+        print sp, clade[sp], regions[sp]
     }
 }
-' test_SC.list.txt ../Gallus_gallus/combined_phaseblks/Gallus_gallus_sexchrs.phasedBlks.csv > gg_regions.csv
+' Ancestral_SC_list.txt ../Gallus_gallus/combined_phaseblks/Gallus_gallus_sexchrs.phasedBlks.csv > gg_regions.Ancestral.csv
 ```
 # Plot the data
 ```
-#!/usr/bin/env Rscript
+Rscript plot_gg_regions_by_clade.R gg_regions.Ancestral.csv gg_chr_len.csv palette.Ancestral.txt Ancestral.clade.png
 
-suppressPackageStartupMessages({
-  library(ggplot2)
-  library(dplyr)
-  library(tidyr)
-  library(stringr)
-  library(readr)
-})
-
-args <- commandArgs(trailingOnly = TRUE)
-
-if (length(args) != 3) {
-  stop("Usage: Rscript plot_gg_regions.R gg_regions.csv gg_chr_len.csv output.png")
+Rscript plot_gg_regions_by_taxa.R gg_regions.Ancestral.csv gg_chr_len.csv palette.Ancestral.txt Ancestral.taxa.png
+```
+# Repeat with neo sex chromosomes
+# Save this as palette.Neo.txt
+```
+Chondricthyes,#4797ba
+Monotremes,#ffcc66
+Therian_mammals,#ffcc66
+Aves,#5fb2a6
+```
+# Subset combined_phased_blks
+```
+awk -F',' '
+BEGIN {
+    OFS=","
 }
 
-gg_regions_file <- "gg_regions.csv"
-gg_chr_len_file <- "gg_chr_len.csv"
-output_file <- "gg_regions_plot.png"
+# species list: Species,Clade
+FNR==NR {
+    gsub(/\r/, "", $1)
+    gsub(/\r/, "", $2)
 
+    if ($1 != "") {
+        want[$1] = 1
+        clade[$1] = $2
+        order[++n] = $1
+    }
+    next
+}
 
-gg_regions_file <- args[1]
-gg_chr_len_file <- args[2]
-output_file <- args[3]
+# header row of CSV
+FNR==1 {
+    for (i=1; i<=NF; i++) {
+        gsub(/\r/, "", $i)
+        col[$i] = i
+    }
+    next
+}
 
-# Read chromosome lengths
-chr_len <- read_csv(
-  gg_chr_len_file,
-  col_names = c("chr", "length"),
-  show_col_types = FALSE
-) %>%
-  mutate(chr = as.character(chr),
-         length = as.numeric(length))
+{
+    sp = $(col["partner"])
 
-# Preserve chromosome order from file
-chr_order <- chr_len$chr
+    if (!(sp in want)) next
+    if ($(col["genome1"]) == "Gallus_gallus") next
+    if ($(col["genome2"]) != "Gallus_gallus") next
+    if ($(col["chr1"]) != "X" && $(col["chr1"]) != "X1" && $(col["chr1"]) != "X2" && $(col["chr1"]) != "X3" && $(col["chr1"]) != "X4" && $(col["chr1"]) != "X5" && $(col["chr1"]) != "X6" && $(col["chr1"]) != "Z" && $(col["chr1"]) != "Z1" && $(col["chr1"]) != "Z2" && $(col["chr1"]) != "Z3" && $(col["chr1"]) != "Z4" && $(col["chr1"]) != "Z5" && $(col["chr1"]) != "Z6") next
 
-# Build cumulative offsets so chromosomes are laid out end-to-end
-gap <- 5000000
+    region = $(col["chr2"]) ":" $(col["startBp2"]) "-" $(col["endBp2"])
 
-chr_len <- chr_len %>%
-  mutate(offset = cumsum(lag(length + gap, default = 0)),
-         center = offset + length / 2)
+    key = sp SUBSEP region
+    if (!(key in seen)) {
+        seen[key] = 1
+        if (sp in regions) {
+            regions[sp] = regions[sp] ";" region
+        } else {
+            regions[sp] = region
+        }
+    }
+}
 
-# Read regions
-regions <- read_csv(gg_regions_file, show_col_types = FALSE) %>%
-  mutate(Gg_regions = ifelse(is.na(Gg_regions), "", Gg_regions))
+END {
+    print "Species","Clade","Gg_regions"
+    for (i=1; i<=n; i++) {
+        sp = order[i]
+        print sp, clade[sp], regions[sp]
+    }
+}
+' Neo_SC_list.txt ../Gallus_gallus/combined_phaseblks/Gallus_gallus_sexchrs.phasedBlks.csv > gg_regions.Neo.csv
+```
+# Plot the data
+```
+Rscript plot_gg_regions_by_clade.R gg_regions.Neo.csv gg_chr_len.csv palette.Neo.txt Neo.clade.png
 
-# Expand semicolon-separated blocks
-regions_long <- regions %>%
-  separate_rows(Gg_regions, sep = ";") %>%
-  mutate(Gg_regions = str_trim(Gg_regions)) %>%
-  filter(Gg_regions != "")
+Rscript plot_gg_regions_by_taxa.R gg_regions.Neo.csv gg_chr_len.csv palette.Neo.txt Neo.taxa.png
 
-# Parse chr:start-end
-regions_long <- regions_long %>%
-  extract(
-    Gg_regions,
-    into = c("chr", "start", "end"),
-    regex = "^([^:]+):(\\d+)-(\\d+)$",
-    remove = FALSE
-  ) %>%
-  mutate(
-    chr = as.character(chr),
-    start = as.numeric(start),
-    end = as.numeric(end)
-  ) %>%
-  filter(!is.na(chr), !is.na(start), !is.na(end)) %>%
-  mutate(
-    xmin_local = pmin(start, end),
-    xmax_local = pmax(start, end)
-  ) %>%
-  left_join(chr_len, by = "chr") %>%
-  filter(!is.na(offset)) %>%
-  mutate(
-    xmin = offset + xmin_local,
-    xmax = offset + xmax_local
-  )
-
-# Preserve species order from input file
-species_order <- unique(regions$Species)
-
-regions_long <- regions_long %>%
-  mutate(Species = factor(Species, levels = rev(species_order)))
-
-# Background rectangles for chromosomes
-chr_bg <- chr_len %>%
-  mutate(
-    xmin = offset,
-    xmax = offset + length
-  )
-
-p <- ggplot() +
-  geom_rect(
-    data = chr_bg,
-    aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf),
-    inherit.aes = FALSE,
-    alpha = 0.08
-  ) +
-  geom_segment(
-    data = regions_long,
-    aes(x = xmin, xend = xmax, y = Species, yend = Species),
-    linewidth = 1.2,
-    lineend = "butt"
-  ) +
-  scale_x_continuous(
-    breaks = chr_len$center,
-    labels = chr_len$chr,
-    expand = expansion(mult = c(0.01, 0.01))
-  ) +
-  labs(
-    x = "Gallus gallus chromosomes",
-    y = "Unique SC systems",
-    title = "Chicken syntenic regions by SC system"
-  ) +
-  theme_bw() +
-  theme(
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor = element_blank(),
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)
-  )
-
-height_inches <- max(4, 0.3 * length(species_order))
-
-ggsave(
-  output_file,
-  plot = p,
-  width = 16,
-  height = 3,
-  dpi = 300
-)
+Rscript plot_gg_regions_by_clade.Neo_and_Ancestral.R \
+  gg_regions.Neo.csv \
+  gg_regions.Ancestral.csv \
+  gg_chr_len.csv \
+  palette.Neo.txt \
+  palette.Ancestral.txt \
+  Neo_and_Ancestral.clade.png
 ```
