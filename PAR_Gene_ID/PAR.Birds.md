@@ -24,10 +24,7 @@ I tested various other thresholds including 50% ID and 0kb and found that the PA
 ```
 Rscript PAR_Plotting_AllSpecies.R
 ```
-## 3. Curate a list of genes found in the PAR regions across all genomes that may have a PAR assembled on both sex chromosomes
-Use the output csv of surviving regions to identify PAR boundaries in the species with half-deep inferred no-PAR-dropout. Then, using only genomes without a neo-sex fusion, identify genes within the PAR for each species.
-
-First, subset the list of species that survived the HalfDeep filter to just those that do not have a neo sex chromosome AND that have some evidence of a PAR in the alignment file.
+Reduce the output to PAR regions, integrating across multiple blocks of inferred PARs.
 ```
 awk -F'[,\t]' 'NR > 1 {
   if (!($1 in min) || $2 < min[$1]) min[$1] = $2
@@ -37,7 +34,7 @@ END {
   for (s in min) print s "," min[s] "-" max[s]
 }' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_inference/alignment/continuous_percentID/surviving_regions.qry.thr98p5.len50000.ALLFILES.csv > ../InferredParBoundaries.csv
 ```
-### Subset the above list to just the species of interest:
+Subset the above list to just the species of interest:
 ```
 awk -F',' '
 ARGIND == 1 {
@@ -84,6 +81,8 @@ Zonotrichia_albicollis
 Zosterops_lateralis
 EOF
 ```
+Manually inspect the output for reasonable PAR inferences. Confirm that the PAR boundaries align with the expectations based on the png output of the R script above.
+
 ### Species with evidence of a neo sex chromosome (exclude)
 ```
 Colius_striatus
