@@ -269,15 +269,18 @@ bcftools concat \
   $(awk '{print "parts/"$1".bcf"}' contigs.txt)
 
 bcftools index --threads 12 Myuchelys_georgesi_snps_multiallelic.bcf
+
+chmod g+rx -R jacksondan/ 
 ```
 # Rename samples and zip vcf
 ```
-sed -E '/^#CHROM/ s#(/[^[:space:]]*/)(SRR[0-9]+)\.sorted\.bam#\2#g' Myuchelys_georgesi_snps_multiallelic.vcf > Myuchelys_georgesi_snps_multiallelic.renamed.vcf
+
+bcftools view Myuchelys_georgesi_snps_multiallelic.bcf | sed -E '/^#CHROM/ s#(/[^[:space:]]*/)(SRR[0-9]+)\.sorted\.bam#\2#g' > Myuchelys_georgesi_snps_multiallelic.renamed.vcf
 bgzip Myuchelys_georgesi_snps_multiallelic.renamed.vcf
 ```
 # Remove scaffolds
 ```
-cat Myuchelys_georgesi_snps_multiallelic.vcf | grep -v 'JAV' > Myuchelys_georgesi_snps_multiallelic.contigs.vcf
+cat Myuchelys_georgesi_snps_multiallelic.renamed.vcf | grep -v 'JAV' > Myuchelys_georgesi_snps_multiallelic.contigs.vcf
 bgzip Myuchelys_georgesi_snps_multiallelic.contigs.vcf
 ```
 # Compute heterozygosity
@@ -348,6 +351,53 @@ CM105076,22
 CM105077,23
 CM105078,24
 CM105079,25
+```
+# Pull sex ID information
+```
+infile="accessions.txt"
+outfile="accession_sex.csv"
+
+printf 'run_accession,sex\n' > "$outfile"
+
+while read -r run; do
+  [[ -z "$run" ]] && continue
+
+  sample=$(
+    curl -fsSG 'https://www.ebi.ac.uk/ena/portal/api/filereport' \
+      --data-urlencode "accession=${run}" \
+      --data-urlencode 'result=read_run' \
+      --data-urlencode 'fields=run_accession,sample_accession,study_accession,scientific_name' \
+      --data-urlencode 'format=tsv' |
+    awk -F'\t' 'NR==2 {print $2}'
+  )
+
+  if [[ -z "${sample:-}" ]]; then
+    sex="NA"
+  else
+    sex=$(
+      curl -fsS -H 'Accept: application/json' \
+        "https://www.ebi.ac.uk/biosamples/samples/${sample}" |
+      jq -r '
+        [
+          .characteristics.sex[]?.text,
+          .characteristics.gender[]?.text,
+          .characteristics["sample sex"][]?.text,
+          .characteristics["donor sex"][]?.text,
+          .characteristics["host sex"][]?.text,
+          .characteristics["individual sex"][]?.text,
+          .characteristics.Sex[]?.text,
+          .characteristics.Gender[]?.text
+        ]
+        | map(select(. != null and . != ""))
+        | unique
+        | if length == 0 then "NA" else join(";") end
+      '
+    )
+  fi
+
+  printf '%s,%s\n' "$run" "$sex" >> "$outfile"
+
+done < "$infile"
 ```
 # Plot heterozygosity using a gradient division of sex
 ```
@@ -515,8 +565,13 @@ library(tidyverse)
 
 het_file   <- "heterozygosity/all_het_matrix.tsv"
 chrom_file <- "chrom_conversion.txt"
+sex_file   <- "accession_sex.csv"
 
-het <- read_tsv(het_file, na = c("", "NA", ".", "NaN"), show_col_types = FALSE) %>%
+het <- read_tsv(
+  het_file,
+  na = c("", "NA", ".", "NaN"),
+  show_col_types = FALSE
+) %>%
   select(CHROM, IND, H_O) %>%
   mutate(
     CHROM = str_remove(CHROM, "^heterozygosity[._]"),
@@ -529,6 +584,25 @@ chrom_conversion <- read_csv(
   show_col_types = FALSE
 )
 
+sex_info <- read_csv(
+  sex_file,
+  na = c("", "NA", ".", "NaN"),
+  show_col_types = FALSE
+) %>%
+  rename(
+    IND = run_accession
+  ) %>%
+  mutate(
+    sex = str_to_lower(sex),
+    group = case_when(
+      sex == "male" ~ "M",
+      sex == "female" ~ "F",
+      sex == "not provided" ~ "not provided",
+      TRUE ~ "not provided"
+    )
+  ) %>%
+  select(IND, sex, group)
+
 het <- het %>%
   left_join(chrom_conversion, by = c("CHROM" = "chrom_accession")) %>%
   mutate(chrom_plot = chrom_label)
@@ -540,57 +614,23 @@ lev_order <- c(setdiff(lev_base, specials), specials[specials %in% lev_base])
 het <- het %>%
   mutate(chrom_plot = factor(chrom_plot, levels = lev_order))
 
-keep_inds <- c(
-  "ERR12115347","ERR12115348","ERR12115349","ERR12115350","ERR12115351",
-  "ERR12115352","ERR12115353","ERR12115354","ERR12115355","ERR12115356",
-  "ERR12115357","ERR12115358","ERR12115359","ERR12115360","ERR12115361",
-  "ERR12115362","ERR12115363","ERR12115364","ERR12115365","ERR12115366",
-  "ERR12115367","ERR12115368","ERR12115369","ERR12115370","ERR12115371",
-  "ERR12115372","ERR12115373","ERR12115374","ERR12115375","ERR12115376",
-  "ERR12115377","ERR12115378","ERR12115379","ERR12115380","ERR12115381",
-  "ERR12115382","ERR12115383","ERR12115384","ERR12115385","ERR12115386",
-  "ERR12115387","ERR12115388","ERR12115389","ERR12115390","ERR12115391",
-  "ERR12115392","ERR12115393","ERR12115394","ERR12115395","ERR12115396",
-  "ERR12115397","ERR12115398","ERR12115399","ERR12115400","ERR12115401",
-  "ERR12115402","ERR12115403","ERR12115404","ERR12115405","ERR12115406",
-  "ERR12115407","ERR12115408","ERR12115409","ERR12115410","ERR12115411",
-  "ERR12115412","ERR12115413","ERR12115414","ERR12115415","ERR12115416",
-  "ERR12115417","ERR12115418","ERR12115419","ERR12115420","ERR12115421",
-  "ERR12115422","ERR12115423","ERR12115424","ERR12115425","ERR12115426",
-  "ERR12115427","ERR12115428"
-)
-
+# Join known sex information
 het <- het %>%
-  filter(IND %in% keep_inds)
+  left_join(sex_info, by = "IND") %>%
+  mutate(
+    group = replace_na(group, "not provided"),
+    group = factor(group, levels = c("M", "F", "not provided"))
+  )
 
-het <- het %>%
-  filter(chrom_plot != "13")
+het_plot <- het
 
-# X-chromosome heterozygosity per individual
-x_het <- het %>%
-  filter(chrom_plot == "X") %>%
-  group_by(IND) %>%
-  summarize(H_X = mean(H_O, na.rm = TRUE), .groups = "drop") %>%
-  arrange(H_X)
-
-# split into lower half = M, upper half = F
-n <- nrow(x_het)
-
-x_het <- x_het %>%
-  mutate(group = if_else(row_number() <= floor(n / 2), "M", "F"))
-
-# if you want exact median split with ties handled by <= median:
-# med_x <- median(x_het$H_X, na.rm = TRUE)
-# x_het <- x_het %>% mutate(group = if_else(H_X <= med_x, "M", "F"))
-
-# join groups back onto full data
-het <- het %>%
-  left_join(x_het %>% select(IND, H_X, group), by = "IND") %>%
-  mutate(group = factor(group, levels = c("M", "F")))
+# Optional: exclude individuals with "not provided" or missing sex
+het_plot <- het %>%
+  filter(!is.na(group))
 
 pd <- position_dodge(width = 0.8)
 
-gg <- ggplot(het, aes(x = chrom_plot, y = H_O, fill = group)) +
+gg <- ggplot(het_plot, aes(x = chrom_plot, y = H_O, fill = group)) +
   geom_violin(
     position = pd,
     width = 0.75,
@@ -627,7 +667,13 @@ gg <- ggplot(het, aes(x = chrom_plot, y = H_O, fill = group)) +
     legend.position = "right"
   )
 
-ggsave("heterozygosity_by_chromosome_MF_violin.pdf", gg, width = 12, height = 3, dpi = 300)
+ggsave(
+  "heterozygosity_by_chromosome_MF_violin.pdf",
+  gg,
+  width = 12,
+  height = 3,
+  dpi = 300
+)
 ```
 # Standardized heterozygosity violin plot
 ```
@@ -661,31 +707,45 @@ het <- het %>%
   mutate(chrom_plot = factor(chrom_plot, levels = lev_order))
 
 keep_inds <- c(
-  "ERR12115347","ERR12115348","ERR12115349","ERR12115350","ERR12115351",
-  "ERR12115352","ERR12115353","ERR12115354","ERR12115355","ERR12115356",
-  "ERR12115357","ERR12115358","ERR12115359","ERR12115360","ERR12115361",
-  "ERR12115362","ERR12115363","ERR12115364","ERR12115365","ERR12115366",
-  "ERR12115367","ERR12115368","ERR12115369","ERR12115370","ERR12115371",
-  "ERR12115372","ERR12115373","ERR12115374","ERR12115375","ERR12115376",
-  "ERR12115377","ERR12115378","ERR12115379","ERR12115380","ERR12115381",
-  "ERR12115382","ERR12115383","ERR12115384","ERR12115385","ERR12115386",
-  "ERR12115387","ERR12115388","ERR12115389","ERR12115390","ERR12115391",
-  "ERR12115392","ERR12115393","ERR12115394","ERR12115395","ERR12115396",
-  "ERR12115397","ERR12115398","ERR12115399","ERR12115400","ERR12115401",
-  "ERR12115402","ERR12115403","ERR12115404","ERR12115405","ERR12115406",
-  "ERR12115407","ERR12115408","ERR12115409","ERR12115410","ERR12115411",
-  "ERR12115412","ERR12115413","ERR12115414","ERR12115415","ERR12115416",
-  "ERR12115417","ERR12115418","ERR12115419","ERR12115420","ERR12115421",
-  "ERR12115422","ERR12115423","ERR12115424","ERR12115425","ERR12115426",
-  "ERR12115427","ERR12115428"
+"SRR32517510",
+"SRR32517511",
+"SRR32517512",
+"SRR32517513",
+"SRR32517514",
+"SRR32517515",
+"SRR32517516",
+"SRR32517517",
+"SRR32517518",
+"SRR32517519",
+"SRR32517520",
+"SRR32517521",
+"SRR32517522",
+"SRR32517523",
+"SRR32517524",
+"SRR32517525",
+"SRR32517526",
+"SRR32517527",
+"SRR32517528",
+"SRR32517529",
+"SRR32517530",
+"SRR32517531",
+"SRR32517532",
+"SRR32517533",
+"SRR32517534",
+"SRR32517535",
+"SRR32517536",
+"SRR32517537",
+"SRR32517538",
+"SRR32517539",
+"SRR32517540",
+"SRR32517541",
+"SRR32517542",
+"SRR32517543",
+"SRR32517544"
 )
 
 het <- het %>%
   filter(IND %in% keep_inds)
-
-
-het <- het %>%
-  filter(chrom_plot != "13")
 
 # get chromosome 1 heterozygosity per individual
 chr1_ref <- het %>%
@@ -700,10 +760,16 @@ het <- het %>%
 
 # use standardized X heterozygosity to define groups
 x_std <- het %>%
-  filter(chrom_plot == "X") %>%
+  filter(chrom_plot == "24") %>%
   group_by(IND) %>%
   summarize(std_H_X = mean(std_H, na.rm = TRUE), .groups = "drop") %>%
-  arrange(std_H_X)
+  mutate(
+    group = case_when(
+      std_H_X > 5 ~ "F",
+      std_H_X < 5 ~ "M",
+      TRUE ~ NA_character_
+    )
+  )
 
 n <- nrow(x_std)
 
@@ -716,7 +782,7 @@ het <- het %>%
 
 pd <- position_dodge(width = 0.8)
 
-gg <- ggplot(het, aes(x = chrom_plot, y = std_H, fill = group)) +
+gg <- ggplot(het, aes(x = chrom_plot, y = std_H_X, fill = group)) +
   geom_violin(
     position = pd,
     width = 0.75,

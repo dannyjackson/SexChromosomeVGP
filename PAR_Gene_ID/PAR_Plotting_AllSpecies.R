@@ -33,7 +33,7 @@ mb_endpoints_only <- function(lims) {
       sprintf("%.1f", lims[2] / 1e6)
     )
   )
-}
+}``
 
 # ----------------------------
 # Paths
