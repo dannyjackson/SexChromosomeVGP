@@ -34,30 +34,68 @@ taxon <- args[1]
 
 tree_file <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk"
 par_size_file <- "species_par.csv"
+gene_file <- "x_par_genes.with_inferred.manual_fixed.tsv"
+telomere_file <- "gapless_species.telomeres.txt"
 
 if (taxon == "birds") {
-  gene_file <- "gene_locations_by_species.with_chr_label.all.In_PAR.Z_only.gapless_species.csv"
-  telomere_file <- "gapless_species.telomeres.txt"
   output_file <- "combined_phylogeny_upset_gene_order_PAR_size.birds.pdf"
   plot_title <- "Phylogeny, PAR gene intersections, PAR gene order, and PAR size - birds"
 }
 
 if (taxon == "mammals") {
-  gene_file <- "gene_locations_by_species.with_chr_label.all.In_PAR.X_only.gapless_species.csv"
-  telomere_file <- "gapless_species.telomeres.txt"
   output_file <- "combined_phylogeny_upset_gene_order_PAR_size.mammals.pdf"
   plot_title <- "Phylogeny, PAR gene intersections, PAR gene order, and PAR size - mammals"
 }
 
 # ============================================================
 # Read data
+# New gene file format:
+# Species Chromosome StartPos StopPos GeneName GeneDescription PAR_status InferredGeneName
 # ============================================================
 
-df <- read_csv(gene_file, show_col_types = FALSE)
+df_raw <- read_tsv(
+  gene_file,
+  show_col_types = FALSE,
+  na = c("", "NA", "N/A")
+)
+
+df <- df_raw %>%
+  transmute(
+    Species = Species,
+    Chrom = Chromosome,
+    Start_pos = as.numeric(StartPos),
+    Stop_pos = as.numeric(StopPos),
+    GeneName = GeneName,
+    GeneDescription = GeneDescription,
+    PAR_status = PAR_status,
+    InferredGeneName = InferredGeneName,
+
+    # Prefer inferred ortholog name when available.
+    Gene = coalesce(InferredGeneName, GeneName),
+
+    # Normalize new PAR_status to the old In_PAR convention.
+    In_PAR = case_when(
+      PAR_status %in% c("Y", "YES", "PAR", "In_PAR", "IN_PAR") ~ "Y",
+      PAR_status %in% c("Edge", "EDGE") ~ "Edge",
+      TRUE ~ "N"
+    )
+  ) %>%
+  filter(
+    !is.na(Species),
+    !is.na(Chrom),
+    !is.na(Gene),
+    !is.na(Start_pos),
+    !is.na(Stop_pos)
+  ) %>%
+  group_by(Species, Chrom, Gene) %>%
+  mutate(Hit_rank = row_number()) %>%
+  ungroup()
+
 tree <- read.tree(tree_file)
 
 # ============================================================
 # Keep genes that are in the PAR in at least one species
+# for the UpSet-style intersection panel
 # ============================================================
 
 genes_in_PAR_any_species <- df %>%
@@ -67,6 +105,43 @@ genes_in_PAR_any_species <- df %>%
 
 df_par_relevant <- df %>%
   filter(Gene %in% genes_in_PAR_any_species)
+
+# ============================================================
+# For the gene-order panel, keep:
+#   1. genes inside the PAR
+#   2. Edge genes, if present
+#   3. the 10 nearest non-PAR genes adjacent to the PAR
+#      per Species + Chromosome
+# ============================================================
+
+df_par_context <- df %>%
+  group_by(Species, Chrom) %>%
+  arrange(Start_pos, Stop_pos, .by_group = TRUE) %>%
+  mutate(
+    chrom_gene_index = row_number(),
+    is_PAR_gene = In_PAR %in% c("Y", "Edge")
+  ) %>%
+  mutate(
+    distance_to_nearest_PAR_gene = if (any(is_PAR_gene)) {
+      par_indices <- chrom_gene_index[is_PAR_gene]
+      vapply(
+        chrom_gene_index,
+        function(i) min(abs(i - par_indices)),
+        numeric(1)
+      )
+    } else {
+      NA_real_
+    },
+    PAR_context_status = case_when(
+      In_PAR == "Y" ~ "PAR",
+      In_PAR == "Edge" ~ "Edge",
+      !is.na(distance_to_nearest_PAR_gene) &
+        distance_to_nearest_PAR_gene <= 10 ~ "Adjacent_non_PAR",
+      TRUE ~ "Exclude"
+    )
+  ) %>%
+  ungroup() %>%
+  filter(PAR_context_status != "Exclude")
 
 # ============================================================
 # Build PAR binary matrix for UpSet-style panel
@@ -112,6 +187,9 @@ par_binary_tree <- par_binary %>%
   select(Gene, all_of(species_order))
 
 df_par_relevant <- df_par_relevant %>%
+  filter(Species %in% species_order)
+
+df_par_context <- df_par_context %>%
   filter(Species %in% species_order)
 
 # ============================================================
@@ -203,17 +281,17 @@ p_matrix <- ggplot(intersection_matrix, aes(x = intersection_index, y = Species)
 
 # ============================================================
 # 3. PAR gene order panel
+# Includes PAR genes plus 10 adjacent non-PAR genes
 # ============================================================
 
-par_genes <- df %>%
-  filter(In_PAR %in% c("Y", "Edge")) %>%
+par_genes <- df_par_context %>%
   filter(Species %in% species_order) %>%
   mutate(
     midpoint = (Start_pos + Stop_pos) / 2
   ) %>%
   group_by(Species, Chrom) %>%
   mutate(
-    PAR_at_end = min(Start_pos, na.rm = TRUE) >= 10000000,
+    PAR_at_end = min(Start_pos[In_PAR %in% c("Y", "Edge")], na.rm = TRUE) >= 10000000,
     adjusted_pos = if_else(PAR_at_end, -midpoint, midpoint)
   ) %>%
   arrange(Species, Chrom, adjusted_pos) %>%
@@ -223,19 +301,16 @@ par_genes <- df %>%
   ungroup()
 
 gene_freq <- par_genes %>%
+  filter(In_PAR == "Y") %>%
   distinct(Species, Gene) %>%
   count(Gene, name = "species_frequency")
 
 par_genes <- par_genes %>%
   left_join(gene_freq, by = "Gene") %>%
   mutate(
+    species_frequency = replace_na(species_frequency, 0L),
     Species = factor(Species, levels = species_order)
   )
-
-# ============================================================
-# 3. PAR gene order panel
-# Includes telomeres, ortholog segments, PAR genes, and Edge genes
-# ============================================================
 
 par_genes <- par_genes %>%
   mutate(
@@ -243,11 +318,11 @@ par_genes <- par_genes %>%
   ) %>%
   group_by(Species, Gene) %>%
   mutate(
-    Gene_label = if_else(
-      n() > 1,
-      paste0(Gene, "_hit", Hit_rank),
+    Gene_label = if (n() > 1) {
+      paste0(Gene, "_hit", row_number())
+    } else {
       Gene
-    )
+    }
   ) %>%
   ungroup()
 
@@ -256,6 +331,9 @@ par_genes_y <- par_genes %>%
 
 par_genes_edge <- par_genes %>%
   filter(In_PAR == "Edge")
+
+par_genes_adjacent <- par_genes %>%
+  filter(PAR_context_status == "Adjacent_non_PAR")
 
 ortholog_segments <- par_genes %>%
   group_by(Species, Gene) %>%
@@ -383,6 +461,22 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     size = 2.8
   ) +
 
+  # Adjacent non-PAR genes: 10 nearest genes outside the PAR
+  geom_point(
+    data = par_genes_adjacent,
+    color = "gray55",
+    size = 2
+  ) +
+  geom_text(
+    data = par_genes_adjacent,
+    aes(label = Gene_label),
+    color = "gray35",
+    angle = 45,
+    hjust = 0,
+    vjust = -0.5,
+    size = 2.4
+  ) +
+
   scale_color_gradient(
     low = "lightgray",
     high = "black",
@@ -399,9 +493,9 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     expand = expansion(mult = c(0.01, 0.01))
   ) +
   labs(
-    x = "Gene order within PAR",
+    x = "Gene order across PAR plus 10 adjacent non-PAR genes",
     y = NULL,
-    title = "PAR gene order"
+    title = "PAR gene order with flanking non-PAR genes"
   ) +
   theme_bw() +
   theme(

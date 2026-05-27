@@ -1,6 +1,7 @@
 # Use SCINKD to detect instances of PAR dropout in Cetaceans
 
 # Load SCINKD
+```
 source myconda
 mamba activate scinkd 
 
@@ -9,9 +10,10 @@ cd /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/SCINKD_PAR_dro
 mkdir cetaceans
 
 cd cetaceans
-
+```
 # 0. Collate all the data needed to evaluate this 
 ## Species of interest
+```
 Eubalaena_glacialis
 Eschrichtius_robustus
 Balaenoptera_physalus
@@ -25,8 +27,9 @@ Stenella_coeruleoalba
 Grampus_griseus
 Pseudorca_crassidens
 Globicephala_melas
-
+```
 ## Predicted PAR status
+```
 Eubalaena glacialis,PRESENT
 Eschrichtius robustus,DROPOUT
 Balaenoptera physalus,PRESENT
@@ -40,7 +43,7 @@ Stenella coeruleoalba,DROPOUT
 Grampus griseus,PRESENT
 Pseudorca crassidens,PRESENT
 Globicephala melas,DROPOUT
-
+```
 # Prep files for SCINKD
 ```
 
@@ -163,7 +166,7 @@ snakemake --use-conda -c "${SLURM_CPUS_PER_TASK:-1}" \
     -s /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/SCINKD_PAR_dropout/SCINKD/SCINKD.v2.1.0.GREEDY.snakefile \
     --configfile /data/Wilson_Lab/projects/VertebrateSexChr/jacksondan/analyses/SCINKD_PAR_dropout/cetaceans/${SPECIES}/config.${SPECIES}.json --printshellcmds --show-failed-logs
 ```
-Run it as a slurm array:
+## Run it as a slurm array:
 ```
 SPECIES_LIST="cetacean.species.txt"
 
@@ -174,7 +177,7 @@ while IFS= read -r SPECIES; do
     sbatch scinkd_submit.cetaceans.sh -s "$SPECIES"
 done < "$SPECIES_LIST"
 ```
-Plot it:
+## Plot it:
 ```
 
 while IFS= read -r SPECIES; do

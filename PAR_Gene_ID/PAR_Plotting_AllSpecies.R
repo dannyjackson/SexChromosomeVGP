@@ -141,6 +141,13 @@ dt[, species := vapply(as.character(file_label), get_species, character(1), tips
 tr <- read.tree(tree_file)
 tr <- ladderize(tr)
 
+
+tr$tip.label <- sub("_$", "", tr$tip.label)
+tipset <- unique(tr$tip.label)
+
+dt[, species := vapply(as.character(file_label), get_species, character(1), tipset = tipset)]
+
+
 # species present in the dataset
 sp_data <- unique(dt$species)
 

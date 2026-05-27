@@ -22,6 +22,7 @@ The thr98p5 section indicates that I used a threshold of 98.5% identity as the c
 
 I tested various other thresholds including 50% ID and 0kb and found that the PAR boundaries do not change, but small regions throughout the chromosomes match and create noise. 
 ```
+sed -i 's/Pongo_abelii_/Pongo_abelii/g' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk
 Rscript PAR_Plotting_AllSpecies.R
 ```
 Reduce the output to PAR regions, integrating across multiple blocks of inferred PARs.

@@ -1,5 +1,13 @@
 # Build a database of gene descriptions and gene names
 From the sex chromosomes of all VGP GFFs, build a database of gene descriptions and gene names. 
+
+
+
+echo 'Gorilla_gorilla,L,YES' >> gapless_species.telomeres.txt
+echo 'Pongo_abelii,L,YES' >> gapless_species.telomeres.txt
+echo 'Symphalangus_syndactylus,L,YES' >> gapless_species.telomeres.txt
+
+
 ```
 #!/usr/bin/env bash
 
@@ -320,3 +328,138 @@ grep 'APOO' x_par_genes.with_inferred.apoo_fixed.tsv
 mv x_par_genes.with_inferred.apoo_fixed.tsv x_par_genes.with_inferred.tsv 
 
 ```
+# Manually rename the PAR genes
+```
+# If the gene is on the human X, trust enough to rename to that gene name. If not, append '-like'
+{
+  printf 'Description\tGeneName\n'
+  printf 'PI-PLC X domain-containing protein 1\tPLCXD1\n'
+  printf 'PI-PLC X domain-containing protein 1-like\tPLCXD1\n'
+  printf 'putative GTP-binding protein 6 \tGTPBP6\n'
+  printf "serine/threonine-protein phosphatase 2A regulatory subunit B'' subunit beta\tPPP2R3B\n"
+  printf "serine/threonine-protein phosphatase 2A regulatory subunit B'' subunit beta-like\tPPP2R3B\n"
+  printf 'short stature homeobox protein\tSHOX\n'
+  printf 'granulocyte-macrophage colony-stimulating factor receptor subunit alpha\tCSF2RA\n'
+  printf 'granulocyte-macrophage colony-stimulating factor receptor subunit alpha-like\tCSF2RA\n'
+  printf 'ADP/ATP translocase 3\tSLC25A6\n'
+  printf 'sperm protein associated with the nucleus on the X chromosome C-like\tSPANXC\n'
+  printf 'interleukin-3 receptor subunit alpha\tIL3RA\n'
+  printf 'interleukin-3 receptor subunit alpha-like\tIL3RA\n'
+  printf 'CD99 antigen-like\tCD99_antigen\n'
+  printf 'CD99 antigen\tCD99_antigen\n'
+  printf 'SPANX A/D member 3\tSPANX-B\n'
+  printf 'probable bifunctional dTTP/UTP pyrophosphatase/methyltransferase protein\tASMTL\n'
+  printf 'putative bifunctional dTTP/UTP pyrophosphatase/methyltransferase protein\tASMTL\n'
+  printf 'cytokine receptor-like factor 2\tCRLF2\n'
+  printf 'P2Y purinoceptor 8\tP2RY8\n'
+  printf 'p2y purinoceptor 8\tP2RY8\n'
+  printf 'P2Y purinoceptor 8-like\tP2RY8\n'
+  printf 'histidine-rich glycoprotein-like\tHRG-like\n'
+  printf 'translationally-controlled tumor protein-like\tTPT1\n'
+  printf 'proline-rich protein HaeIII subfamily 1-like\tPRH1\n'
+  printf 'cAMP-dependent protein kinase catalytic subunit PRKX-like\tPRKX\n'
+  printf 'cAMP-dependent protein kinase catalytic subunit PRKX\tPRKX\n'
+  printf 'atherin-like\tatherin-like\n'
+  printf 'endogenous retrovirus group K member 113 Env polyprotein-like\tHERV-K113 Env-like\n'
+  printf 'mucin-3A-like\tMUC3A-like\n'
+  printf 'dehydrogenase/reductase SDR family member on chromosome X\tDHRSX\n'
+  printf 'dehydrogenase/reductase SDR family member on chromosome X-like\tDHRSX\n'
+  printf 'small ribosomal subunit protein eS24-like\tRPS24-like\n'
+  printf 'anoctamin-8-like\tANO8-like\n'
+  printf 'protein FAM47A-like\tFAM47A\n'
+  printf 'S-geranylgeranyl-glutathione receptor P2RY\tP2RY8\n'
+  printf 'glycoprotein xg\tXG\n'
+  printf 'glycoprotein Xg-like\tXG\n'
+  printf 'apolipoprotein A-Ia-like\tAPOA1-like\n'
+  printf 'polyprenol dehydrogenase-like\tDHRSX\n'
+  printf 'E3 SUMO-protein ligase ZBED1\tZBED1\n'
+  printf 'E3 SUMO-protein ligase ZBED1-like\tZBED1\n'
+  printf 'glycogenin-2-like\tGYG2\n'
+  printf 'arylsulfatase H-like\tARSH\n'
+  printf 'matrix-remodeling-associated protein 5\tMXRA5\n'
+  printf 'matrix-remodeling-associated protein 5-like\tMXRA5\n'
+  printf 'zinc finger protein 665-like\tZNF665-like\n'
+  printf 'protein lyl-1-like\tLYL1-like\n'
+  printf 'odorant-binding protein-like\tOBP-like\n'
+  printf 'allergen Bos d 2-like\tBDA20-like\n'
+  printf 'neuroligin-4%%2C X-linked\tNLGN4X\n'
+  printf 'steryl-sulfatase\tSTS\n'
+  printf 'steryl-sulfatase-like\tSTS\n'
+  printf 'histone-lysine N-methyltransferase PRDM9-like\tPRDM9-like\n'
+  printf 'patatin-like phospholipase domain-containing protein 4\t  
+
+} > manual_adjustment.tsv
+
+awk -F'\t' '
+BEGIN {
+    OFS = "\t"
+}
+
+# First file: manual_adjustment.tsv
+NR == FNR {
+    if (FNR == 1) next
+
+    desc = clean_description($1)
+    gene = $2
+
+    if (desc != "" && gene != "") {
+        manual[desc] = gene
+    }
+
+    next
+}
+
+# Second file: x_par_genes.with_inferred.tsv
+FNR == 1 {
+    for (i = 1; i <= NF; i++) {
+        if ($i == "GeneDescription") desc_col = i
+        if ($i == "InferredGeneName") inferred_col = i
+    }
+
+    print
+    next
+}
+
+{
+    desc = clean_description($desc_col)
+
+    if (desc in manual) {
+        $inferred_col = manual[desc]
+    }
+
+    print
+}
+
+function clean_description(s) {
+    gsub(/%2C/, ",", s)
+    gsub(/%2c/, ",", s)
+
+    gsub(/^[ \t\r\n]+/, "", s)
+    gsub(/[ \t\r\n]+$/, "", s)
+    gsub(/[ \t]+/, " ", s)
+
+    return s
+}
+' manual_adjustment.tsv x_par_genes.with_inferred.tsv > x_par_genes.with_inferred.manual_fixed.tsv
+
+
+Rscript PAR_Combined_Plot.gff.R mammals
+
+
+
+# Notes
+
+Pan paniscus and Pan troglodytes each have a histidine-rich glycoprotein-like gene in the PAR (Pan paniscus: LOC129395393) and non PAR (Pan troglodytes)
+
+
+SPANX-B
+SPANXA1
+SPANXA2
+SPANXB1
+SPANXC
+SPANXD
+SPANXN1
+SPANXN2
+SPANXN3
+SPANXN4
+SPANXN5

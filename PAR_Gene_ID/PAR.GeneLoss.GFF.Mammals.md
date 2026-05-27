@@ -49,6 +49,10 @@ Loxodonta_africana,NC_087369.1:0-10314587
 Urocitellus_parryii,NC_135547.1:122998411-131433435 
 Meles_meles,NC_060087.1:0-6387864
 Homo_sapiens,NC_060947.1:0-2394410
+Pongo_pygmaeus,NC_072396.2:0-2356740
+Symphalangus_syndactylus,NC_072447.2:0-16994066
+Gorilla_gorilla,NC_073247.2:0-12039748
+Pongo_abelii,NC_072008.2:0-2382235
 EOF
 
 chmod +x find_PAR_gaps.sh 
@@ -70,6 +74,10 @@ Pan_troglodytes,0-3170188
 Pan_paniscus,0-2524164                      
 Homo_sapiens,0-2394410
 Callithrix_jacchus,0-1757279
+Pongo_pygmaeus,NC_072396.2:0-2356740
+Symphalangus_syndactylus,NC_072447.2:0-16994066
+Gorilla_gorilla,NC_073247.2:0-12039748
+Pongo_abelii,NC_072008.2:0-2382235
 EOF
 ```
 ## 1. Curate annotated genes found in the PARs
@@ -89,7 +97,7 @@ chmod +x infer_gene_names_from_descriptions.py
   -f x_par_genes.failed_to_rename.tsv
 
 ```
-# Compute freq of loc genes
+# Compute freq of loc genes 
 ```
 #!/usr/bin/env Rscript
 
@@ -99,7 +107,9 @@ library(readr)
 # Input file from your AWK script
 infile <- "x_par_genes.with_inferred_names.tsv"
 
-df <- read_tsv(infile, show_col_types = FALSE)
+df <- read_tsv(infile, show_col_types = FALSE) %>%
+  filter(Species != "Homo_sapiens")
+  
 
 df2 <- df %>%
   mutate(
@@ -124,10 +134,93 @@ loc_freq <- df2 %>%
 
 print(loc_freq, width = Inf)
 
-write_tsv(loc_freq, "loc_gene_frequency_PAR_vs_nonPAR.tsv")
+# In all mammals except humans, PAR%LOC is 63.2%; nonPAR%LOC is 25.6%
+
+df <- read_tsv(infile, show_col_types = FALSE) %>%
+  filter(Species == "Homo_sapiens")
+  
+
+df2 <- df %>%
+  mutate(
+    Region = if_else(PAR_status == "Y", "PAR", "nonPAR"),
+    Is_LOC = grepl("^LOC", GeneName),
+    Is_Uncharacterized_LOC = grepl("uncharacterized", GeneDescription, ignore.case = TRUE)
+  )
+
+loc_freq <- df2 %>%
+  group_by(Region) %>%
+  summarise(
+    TotalGenes = n(),
+    LOCGenes = sum(Is_LOC, na.rm = TRUE),
+    NonLOCGenes = sum(!Is_LOC, na.rm = TRUE),
+    LOCFrequency = LOCGenes / TotalGenes,
+    LOCPercent = 100 * LOCFrequency,
+    UncharacterizedLOCGenes = sum(Is_Uncharacterized_LOC, na.rm = TRUE),
+    UncharacterizedLOCFrequency = UncharacterizedLOCGenes / TotalGenes,
+    UncharacterizedLOCPercent = 100 * UncharacterizedLOCFrequency,
+    .groups = "drop"
+  )
+
+print(loc_freq, width = Inf)
+
+# In just humans, PAR%LOC is 6.67%; nonPAR%LOC is 2.27%
+
+```
+# Infer gene names from descriptions
+```
+See Standardize_Gene_Names.md file
+
+```
+# Plot
+```
+cp ../../mammals/gapless_species.telomeres.txt .
+
+Rscript PAR_Combined_Plot.gff.R mammals
 ```
 
 
+
+
+
+# Filter X genes to just genes in the PAR and the adjacent non-PAR genes
+```
+#!/usr/bin/env Rscript
+
+library(dplyr)
+library(readr)
+
+infile <- "x_par_genes.with_inferred_names.tsv"
+outfile <- "x_par_genes.with_inferred_names.PAR_plus_20_adjacent.tsv"
+
+df <- read_tsv(infile, show_col_types = FALSE)
+
+filtered <- df %>%
+  group_by(Species) %>%
+  arrange(StartPos, StopPos, .by_group = TRUE) %>%
+  mutate(
+    gene_index = row_number(),
+    par_index = if_else(PAR_status == "Y", gene_index, NA_integer_)
+  ) %>%
+  mutate(
+    first_par_index = min(par_index, na.rm = TRUE),
+    last_par_index  = max(par_index, na.rm = TRUE),
+    keep_gene = gene_index >= first_par_index - 20 &
+                gene_index <= last_par_index + 20,
+    RegionWindowStatus = case_when(
+      PAR_status == "Y" ~ "PAR",
+      gene_index < first_par_index ~ "upstream_20_adjacent",
+      gene_index > last_par_index ~ "downstream_20_adjacent",
+      TRUE ~ "within_PAR_window"
+    )
+  ) %>%
+  filter(keep_gene) %>%
+  ungroup() %>%
+  select(-gene_index, -par_index, -first_par_index, -last_par_index, -keep_gene)
+
+write_tsv(filtered, outfile)
+
+print(filtered, n = Inf, width = Inf)
+```
 
 
 
