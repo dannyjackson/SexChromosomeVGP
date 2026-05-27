@@ -1,6 +1,6 @@
 # Use SCINKD to detect instances of PAR dropout in Cetaceans
 
-# Load SCINKD
+# Load SCINKD 
 ```
 source myconda
 mamba activate scinkd 
