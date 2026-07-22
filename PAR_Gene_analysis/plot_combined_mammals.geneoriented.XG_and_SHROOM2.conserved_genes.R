@@ -9,13 +9,27 @@ library(scales)
 # ============================================================
 
 # Gene to use as ordinal origin point
-GENE <- "DYM"
+GENE <- "SHROOM2"
+
+XG_ORIGIN_SPECIES <- c(
+  "Pan_paniscus",
+  "Pan_troglodytes",
+  "Homo_sapiens",
+  "Gorilla_gorilla",
+  "Pongo_abelii",
+  "Pongo_pygmaeus",
+  "Symphalangus_syndactylus",
+  "Macaca_nemestrina"
+)
+
+XG_ORIGIN_SPECIES <- c(
+)
 
 # How many ordinal positions to show on either side of GENE
-ORDINAL_MIN <- -30
-ORDINAL_MAX <- 30
+ORDINAL_MIN <- -45
+ORDINAL_MAX <- 37
 
-gene_file <- "birds_PAR_genes.all.tsv"
+gene_file <- "mammals_PAR_genes.all.ZNF_arrays.tsv"
 
 tree_file <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk"
 
@@ -61,11 +75,11 @@ species_par <- read_csv(
   mutate(
     PARStart = as.numeric(PARStart),
     PARStop = as.numeric(PARStop),
-    par_size_Mb = abs(PARStop - PARStart)
+    par_size_bp = abs(PARStop - PARStart)
   )
 
 # ============================================================
-# Normalize column names from birds_PAR_genes.all.tsv
+# Normalize column names from mammals_PAR_genes.tsv
 # ============================================================
 
 df <- df %>%
@@ -88,7 +102,8 @@ df <- df %>%
 # ============================================================
 
 genes_in_PAR_any_species <- df %>%
-  filter(In_PAR %in% c("Y", "Edge", "N")) %>%
+  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
+  filter(Species %in% c("Homo_sapiens")) %>%
   distinct(Gene) %>%
   pull(Gene)
 
@@ -125,20 +140,51 @@ tree_filtered <- keep.tip(
   intersect(tree$tip.label, species_cols)
 )
 
-# ============================================================
-# Diagnostic tree with node numbers for choosing rotations
-# ============================================================
-
-tree_filtered <- ape::rotate(tree_filtered, node = 28)
-tree_filtered <- ape::rotate(tree_filtered, node = 29)
-tree_filtered <- ape::rotate(tree_filtered, node = 30)
-tree_filtered <- ape::rotate(tree_filtered, node = 31)
-tree_filtered <- ape::rotate(tree_filtered, node = 32)
-tree_filtered <- ape::rotate(tree_filtered, node = 33)
 tree_filtered <- ape::rotate(tree_filtered, node = 34)
-tree_filtered <- ape::rotate(tree_filtered, node = 35)
+tree_filtered <- ape::rotate(tree_filtered, node = 56)
+tree_filtered <- ape::rotate(tree_filtered, node = 57)
+tree_filtered <- ape::rotate(tree_filtered, node = 58)
+tree_filtered <- ape::rotate(tree_filtered, node = 59)
+tree_filtered <- ape::rotate(tree_filtered, node = 60)
+
+p_tree_tmp <- ggtree(tree_filtered, ladderize = FALSE)
+
+tree_plot_order <- p_tree_tmp$data %>%
+  filter(isTip) %>%
+  arrange(y) %>%
+  pull(label)
+
+species_order <- tree_plot_order
+
+par_binary_tree <- par_binary %>%
+  select(Gene, all_of(species_order))
+
+df_par_relevant <- df_par_relevant %>%
+  filter(Species %in% species_order)
+
+species_par <- species_par %>%
+  filter(Species %in% species_order)
+
+# ============================================================
+# 1. Phylogeny panel
+# ============================================================
+
+p_tree <- ggtree(tree_filtered, ladderize = FALSE) +
+  geom_tiplab(size = 5, align = FALSE) +
+  xlim_tree(0.4) +
+  coord_cartesian(clip = "off") +
+  theme_tree2() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    plot.margin = margin(5.5, 5.5, 5.5, 5.5)
+  )
 
 
+# ============================================================
+# TEST: Diagnostic tree with node numbers for choosing rotations
+# ============================================================
 
 test_tree_png <- "tree_filtered_node_numbers.png"
 
@@ -180,40 +226,6 @@ ggsave(
   height = max(6, length(tree_filtered$tip.label) * 0.22),
   dpi = 300
 )
-
-p_tree_tmp <- ggtree(tree_filtered, ladderize = FALSE)
-
-tree_plot_order <- p_tree_tmp$data %>%
-  filter(isTip) %>%
-  arrange(y) %>%
-  pull(label)
-
-species_order <- tree_plot_order
-
-par_binary_tree <- par_binary %>%
-  select(Gene, all_of(species_order))
-
-df_par_relevant <- df_par_relevant %>%
-  filter(Species %in% species_order)
-
-species_par <- species_par %>%
-  filter(Species %in% species_order)
-
-# ============================================================
-# 1. Phylogeny panel
-# ============================================================
-
-p_tree <- ggtree(tree_filtered, ladderize = FALSE) +
-  geom_tiplab(size = 3, align = FALSE) +
-  xlim_tree(0.4) +
-  coord_cartesian(clip = "off") +
-  theme_tree2() +
-  theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    plot.margin = margin(5.5, 5.5, 5.5, 5.5)
-  )
 
 # ============================================================
 # 2. UpSet-style intersection panel
@@ -259,11 +271,10 @@ intersection_matrix <- intersection_counts %>%
 p_bar <- ggplot(intersection_counts, aes(x = intersection_index, y = n_genes)) +
   geom_col() +
   scale_x_discrete(drop = FALSE) +
-  scale_y_continuous(limits = c(0, 10)) +
   labs(
     x = NULL,
     y = NULL,
-    title = "Genes in intersection"
+    title = NULL
   ) +
   theme_bw() +
   theme(
@@ -299,19 +310,29 @@ p_matrix <- ggplot(intersection_matrix, aes(x = intersection_index, y = Species)
 # 3. PAR gene order panel
 # Gene order is centered on GENE, so GENE = ordinal position 0
 # ============================================================
+par_orientation <- df %>%
+  filter(In_PAR %in% c("Y", "Edge")) %>%
+  group_by(Species, Chrom) %>%
+  summarise(
+    min_PAR_start = min(Start_pos, na.rm = TRUE),
+    PAR_at_end = min_PAR_start >= 10000000,
+    .groups = "drop"
+  )
 
 par_genes <- df %>%
-  filter(In_PAR %in% c("Y", "Edge", "N")) %>%
+  filter(Gene %in% genes_in_PAR_any_species) %>%
+  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
   filter(Species %in% species_order) %>%
   mutate(
     midpoint = (Start_pos + Stop_pos) / 2
   ) %>%
-  group_by(Species, Chrom) %>%
+  left_join(par_orientation, by = c("Species", "Chrom")) %>%
   mutate(
-    PAR_at_end = min(Start_pos[In_PAR %in% c("Y", "Edge")], na.rm = TRUE) >= 10000000,
+    PAR_at_end = replace_na(PAR_at_end, FALSE),
     adjusted_pos = if_else(PAR_at_end, -midpoint, midpoint)
   ) %>%
   arrange(Species, Chrom, adjusted_pos) %>%
+  group_by(Species, Chrom) %>%
   mutate(
     raw_PAR_order = row_number()
   ) %>%
@@ -323,12 +344,33 @@ par_genes <- df %>%
 # ordinal occurrence after chromosome/PAR orientation adjustment.
 # ------------------------------------------------------------
 
+origin_gene_by_species <- tibble(
+  Species = species_order,
+  Origin_gene = if_else(
+    Species %in% XG_ORIGIN_SPECIES,
+    "XG",
+    GENE
+  )
+)
+
 gene_origin <- par_genes %>%
-  filter(Gene == GENE) %>%
-  group_by(Species) %>%
+  inner_join(origin_gene_by_species, by = "Species") %>%
+  filter(Gene == Origin_gene) %>%
+  group_by(Species, Origin_gene) %>%
   slice_min(raw_PAR_order, n = 1, with_ties = FALSE) %>%
   ungroup() %>%
-  select(Species, origin_raw_PAR_order = raw_PAR_order)
+  mutate(
+    origin_raw_PAR_order = if_else(
+      Species %in% XG_ORIGIN_SPECIES,
+      raw_PAR_order + 24,
+      raw_PAR_order
+    )
+  ) %>%
+  select(
+    Species,
+    Origin_gene,
+    origin_raw_PAR_order
+  )
 
 missing_origin_species <- setdiff(
   as.character(species_order),
@@ -336,10 +378,20 @@ missing_origin_species <- setdiff(
 )
 
 if (length(missing_origin_species) > 0) {
+  missing_origin_tbl <- origin_gene_by_species %>%
+    filter(Species %in% missing_origin_species)
+
   warning(
     paste0(
-      "Origin gene '", GENE, "' was not found in these species and they will be omitted from the gene-order panel: ",
-      paste(missing_origin_species, collapse = ", ")
+      "Origin gene was not found in these species and they will be omitted from the gene-order panel: ",
+      paste(
+        paste0(
+          missing_origin_tbl$Species,
+          " expected ",
+          missing_origin_tbl$Origin_gene
+        ),
+        collapse = ", "
+      )
     )
   )
 }
@@ -358,7 +410,7 @@ plot_x_min <- min(par_genes$PAR_order, na.rm = TRUE) - 2
 plot_x_max <- plot_x_min + (ORDINAL_MAX - ORDINAL_MIN)
 
 gene_freq <- par_genes %>%
-  filter(In_PAR == "Y") %>%
+  filter(In_PAR %in% c("Y", "Edge")) %>%
   distinct(Species, Gene) %>%
   count(Gene, name = "species_frequency")
 
@@ -438,8 +490,76 @@ par_array_genes_edge <- par_genes %>%
   filter(In_PAR == "Edge", is_array_gene)
 
 ref_species_labels <- par_genes %>%
-  filter(Species == "Taeniopygia_guttata")
+  filter(Species == "Homo_sapiens")
 
+# ------------------------------------------------------------
+# Label the last PAR/Edge gene in each species
+# "Last" means the greatest plotted PAR_order after any inversion.
+# ------------------------------------------------------------
+
+last_par_gene_labels <- par_genes %>%
+  filter(
+    In_PAR %in% c("Y", "Edge"),
+    !is_array_gene
+  ) %>%
+  group_by(Species) %>%
+  slice_max(
+    order_by = PAR_order,
+    n = 1,
+    with_ties = FALSE
+  ) %>%
+  ungroup()
+  
+# ============================================================
+# Gene-level PAR/Edge conservation panel
+# Bar above each Homo sapiens gene = number of genomes where
+# that gene is found in PAR or Edge
+# ============================================================
+
+gene_par_edge_counts <- df %>%
+  filter(Gene %in% genes_in_PAR_any_species) %>%
+  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
+  filter(In_PAR %in% c("Y", "Edge")) %>%
+  distinct(Species, Gene) %>%
+  count(Gene, name = "n_genomes_PAR_or_Edge")
+
+homo_gene_par_edge_counts <- ref_species_labels %>%
+  distinct(Gene, Gene_label, PAR_order) %>%
+  left_join(gene_par_edge_counts, by = "Gene") %>%
+  mutate(
+    n_genomes_PAR_or_Edge = replace_na(n_genomes_PAR_or_Edge, 0L)
+  )
+
+p_gene_par_edge_count <- ggplot(
+  homo_gene_par_edge_counts,
+  aes(x = PAR_order, y = n_genomes_PAR_or_Edge)
+) +
+  geom_col(width = 0.8) +
+  scale_x_continuous(
+    breaks = seq(
+      ceiling(plot_x_min / 10) * 10,
+      floor(plot_x_max / 10) * 10,
+      by = 10
+    ),
+    limits = c(plot_x_min, plot_x_max),
+    expand = expansion(mult = c(0, 0))
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.08))
+  ) +
+  labs(
+    x = NULL,
+    y = NULL
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(5.5, 5.5, 0, 5.5)
+  )
+  
 ortholog_segments <- par_genes %>%
   group_by(Species, Gene) %>%
   slice_min(abs(PAR_order), n = 1, with_ties = FALSE) %>%
@@ -456,7 +576,7 @@ ortholog_segments <- par_genes %>%
   ungroup()
 
 highlight_segments <- par_genes %>%
-  filter(Gene %in% c("DYM")) %>%
+  filter(Gene %in% c("SHROOM2", "XG")) %>%
   group_by(Species, Gene) %>%
   slice_min(abs(PAR_order), n = 1, with_ties = FALSE) %>%
   ungroup() %>%
@@ -505,25 +625,25 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
       yend = yend
     ),
     color = "black",
-    linewidth = 1,
+    linewidth = 0.5,
     alpha = 1,
     inherit.aes = FALSE
   ) +
   geom_point(
     data = nonpar_genes,
-    color = "gray80",
-    size = 1.2
+    color = "#f1e1f9",
+    size = 3
   ) +
   geom_point(
     data = nonpar_array_genes,
-    color = "gray80",
+    color = "#f1e1f9",
     shape = 24,
     size = 2
   ) +
   geom_point(
     data = par_genes_y,
     aes(color = species_frequency),
-    size = 1.5
+    size = 3
   ) +
   geom_point(
     data = par_array_genes_y,
@@ -534,7 +654,7 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
   geom_point(
     data = par_genes_edge,
     color = "blue",
-    size = 1.5
+    size = 3
   ) +
   geom_point(
     data = par_array_genes_edge,
@@ -546,15 +666,28 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     data = ref_species_labels,
     aes(label = Gene_label),
     color = "black",
-    angle = 45,
+    angle = 90,
     hjust = 0,
-    vjust = -0.5,
-    nudge_y = 0.08,
-    size = 2.5
+    vjust = 0.5,
+    nudge_y = 0.15,
+    size = 4
+  ) +
+  geom_text(
+    data = last_par_gene_labels,
+    aes(
+      x = PAR_order,
+      y = species_index,
+      label = Gene_label
+    ),
+    inherit.aes = FALSE,
+    color = "black",
+    hjust = -0.15,
+    vjust = 1.5,
+    size = 4
   ) +
   scale_color_gradient(
-    low = "#fcbba1",
-    high = "#cb181d",
+    low = "#8a65b9",
+    high = "#8a65b9",
     name = "PAR gene\nspecies frequency"
   ) +
   geom_point(
@@ -564,7 +697,7 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     shape = 23,
     fill = "black",
     color = "black",
-    size = 2
+    size = 3
   ) +
   geom_point(
     data = telomere_absent,
@@ -573,7 +706,7 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     shape = 23,
     fill = "white",
     color = "black",
-    size = 2
+    size = 3
   ) +
   scale_x_continuous(
     breaks = seq(
@@ -591,19 +724,30 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     expand = expansion(mult = c(0.01, 0.01))
   ) +
   labs(
-    x = paste0("Ordinal gene order relative to ", GENE),
+    x = paste0("Ordinal gene order"),
     y = NULL,
-    title = paste0("PAR gene order centered on ", GENE)
+    title = NULL
   ) +
+  coord_cartesian(clip = "off") +
   theme_bw() +
   theme(
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
+    axis.title.x = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
     panel.grid.major.y = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
-    plot.title = element_text(size = 10, face = "bold")
-  )
+    plot.title = element_text(size = 10, face = "bold"),
+    legend.position = "none",
+    plot.margin = margin(
+      t = 60,
+      r = 10,
+      b = 5.5,
+      l = 5.5
+    ),
+    panel.border = element_blank()
+)
 
 # ============================================================
 # 4. PAR size panel
@@ -616,18 +760,17 @@ par_size <- species_par %>%
   ) %>%
   filter(!is.na(Species))
 
-p_par_size <- ggplot(par_size, aes(x = par_size_Mb, y = Species)) +
+p_par_size <- ggplot(par_size, aes(x = par_size_bp, y = Species)) +
   geom_col() +
   scale_y_discrete(limits = species_order) +
   scale_x_continuous(
-    labels = scales::label_number(scale = 1e-6),
-    limits = c(0, 20e6),
+    labels = scales::label_number(scale = 1e-6, suffix = " Mb"),
     expand = expansion(mult = c(0, 0.08))
   ) +
   labs(
     x = "PAR size",
     y = NULL,
-    title = "PAR size"
+    title = NULL
   ) +
   theme_bw() +
   theme(
@@ -646,14 +789,14 @@ blank_tree_space <- ggplot() + theme_void()
 blank_gene_space <- ggplot() + theme_void()
 blank_size_space <- ggplot() + theme_void()
 
-top_row <- blank_tree_space + p_bar + blank_gene_space + blank_size_space +
-  plot_layout(widths = c(3, 2.5, 20, 2))
+top_row <- blank_tree_space + blank_size_space + p_gene_par_edge_count +
+  plot_layout(widths = c(3, 2, 20))
 
-bottom_row <- p_tree + p_matrix + p_gene_order + p_par_size +
-  plot_layout(widths = c(3, 2.5, 20, 2))
+bottom_row <- p_tree + p_par_size + p_gene_order +
+  plot_layout(widths = c(3, 2, 20))
 
 combined_plot <- top_row / bottom_row +
-  plot_layout(heights = c(1.2, 4)) +
+  plot_layout(heights = c(0.5, 4)) +
   plot_annotation(
     title = "Phylogeny, PAR gene intersections, PAR gene order, and PAR size",
     theme = theme(
@@ -662,9 +805,9 @@ combined_plot <- top_row / bottom_row +
   )
 
 ggsave(
-  filename = paste0("combined_phylogeny_upset_gene_order_PAR_size.", GENE, ".pdf"),
+  filename = paste0("combined_phylogeny_upset_gene_order_PAR_size.SHROOM_XG.conserved_genes.pdf"),
   plot = combined_plot,
   width = 24,
-  height = 8,
+  height = 18,
   limitsize = FALSE
 )

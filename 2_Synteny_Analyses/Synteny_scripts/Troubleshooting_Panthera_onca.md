@@ -13,7 +13,7 @@ source myconda
 conda activate ncbi_datasets
 
 FILES_TO_DOWNLOAD="gff3,rna,cds,protein,genome,seq-report"
-ACCESSION="GCA_046562875.2"
+ACCESSION="GCA_046562875.1"
 datasets download genome accession "${ACCESSION}" \
   --include "${FILES_TO_DOWNLOAD}" 
 
@@ -34,6 +34,8 @@ mv complete.genomic.gff mPanOnc1.gff
 # Make symlink for FASTA
 ```
 ln -sf /data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Panthera_onca/ncbi_dataset/data/GCA_046562875.2/GCA_046562875.2_mPanOnc1_haplotype_2_genomic.fna mPanOnc1.fa 
+
+ln -sf /data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Panthera_onca/ncbi_dataset/data/GCA_046562875.1/GCA_046562875.1_mPanOnc1_haplotype_2_genomic.fna /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Panthera_onca/Panthera_onca.fna
 ```
 # Make bed and peptide files
 ```

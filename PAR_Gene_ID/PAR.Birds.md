@@ -7,9 +7,61 @@ To do this, we will first identify genes conserved in the PARs across multiple g
 ```
 cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_Gene_ID/birds
 sinteractive --mem=20g
-module load bcftools vcftools samtools 
+module load bcftools vcftools samtools R
 ```
-# Plot regions of sequecnthe alignment of sex chromosomes ac
+# Plot regions of sequence alignment of sex chromosomes
+mv /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_985thr/PAR_annotations/Mustela_nivalis_vulgaris_YtoX.aln.id98_5.len10k.refqry.bed /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_985thr/old/Mustela_nivalis_vulgaris_YtoX.aln.id98_5.len10k.refqry.bed 
+
+mv /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Mustela_nivalis_vulgaris_YtoX.aln.refqry.csv /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/old/Mustela_nivalis_vulgaris_YtoX.aln.refqry.csv
+
+# Process Molossus
+paf="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/filtered_98.5_10kb_Molossus_nigricans_GCA_039880945.1_hap1_GCA_039880925.1_hap2_YtoX.aln.paf"
+
+out="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/filtered_98.5_10kb_Molossus_nigricans_GCA_039880945.1_hap1_GCA_039880925.1_hap2_YtoX.aln.id98_5.len10k.refqry.bed"
+
+awk 'BEGIN{
+  OFS="\t"
+  print "chrom_qry","len_qry","bp_start_qry","bp_end_qry","percent_identity_qry","chrom_ref","len_ref","bp_start_ref","bp_end_ref","percent_identity_ref"
+}
+{
+  pid = ($11 > 0 ? 100 * $10 / $11 : 0)
+
+  print $1, $2, $3, $4, sprintf("%.4f", pid), $6, $7, $8, $9, sprintf("%.4f", pid)
+}' "$paf" > "$out"
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_985thr/PAR_annotations/Molossus_nigricans_YtoX.aln.id98_5.len10k.refqry.bed 
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Molossus_nigricans_YtoX.aln.refqry.csv
+
+
+# Process Mustela
+paf="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/filtered_98.5_10kb_Mustela_nivalis_vulgaris_GCA_057128415.1_hap1_GCA_057128425.1_hap2_YtoX.aln.paf"
+
+out="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/filtered_98.5_10kb_Mustela_nivalis_vulgaris_GCA_057128415.1_hap1_GCA_057128425.1_hap2_YtoX.aln.id98_5.len10k.refqry.csv"
+
+awk 'BEGIN{
+  OFS="\t"
+  print "chrom_qry","len_qry","bp_start_qry","bp_end_qry","percent_identity_qry","chrom_ref","len_ref","bp_start_ref","bp_end_ref","percent_identity_ref"
+}
+{
+  pid = ($11 > 0 ? 100 * $10 / $11 : 0)
+
+  print $1, $2, $3, $4, sprintf("%.4f", pid), $6, $7, $8, $9, sprintf("%.4f", pid)
+}' "$paf" > "$out"
+
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_985thr/PAR_annotations/Mustela_nivalis_vulgaris_YtoX.aln.id98_5.len10k.refqry.bed 
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Mustela_nivalis_vulgaris_YtoX.aln.refqry.csv
+
+head -n 1 /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Vipera_berus_WtoZ.aln.refqry.csv > \
+    /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Mustela_nivalis_vulgaris_YtoX.aln.refqry.csv
+cat /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_985thr/PAR_annotations/Mustela_nivalis_vulgaris_YtoX.aln.id98_5.len10k.refqry.bed >> \
+/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Mustela_nivalis_vulgaris_YtoX.aln.refqry.csv
+
+
+# Plot with R script
+
 Rscript PAR_Plotting_AllSpecies.R
 # Use the output csv of surviving regions to identify PAR boundaries in the species with half-deep inferred no-PAR-dropout
 

@@ -1,97 +1,56 @@
 # Identify all genes found in any avian PAR, curate fastas for blast analysis, then identify genes within PARs of all genomes
 ## 0. Quantify gappiness of each PAR
 ```
-cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_Gene_analysis/TOGA2_annotations/mammals
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_Gene_analysis/TOGA2_annotations/mammals_TOGAintegrated
 
-TOGA_DIR="/data/Wilson_Lab/data/TOGA2_Hiller/Homo_sapiens_hg38"
-
-## Excluding:
-Microtus_pennsylvanicus,CHROM:0-116367
-Ochotona_princeps,CHROM:107724012-107801096 
-
-
-Panthera_onca,122788602-130762486
-Bos_taurus,240-6843483
+TOGA_DIR="/data/Wilson_Lab/data/TOGA2_Hiller/Integrated"
 
 
 # Confirm that accessions in sexchrfile still match correctly (genomes have been updated)
-SEXCHR_FILE="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/sexchrom_accessions.csv"
-BASE="/data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/"
+BASE="/data/Wilson_Lab/data/VGP_genomes_phase1/symlinks"
 
-SPECIES=Bos_taurus
-grep '>' ${BASE}/${SPECIES}/${SPECIES}.fna | grep 'chromosome'
+SPECIES=Miniopterus_schreibersii
+grep '>' ${BASE}/${SPECIES}/${SPECIES}.fna | grep 'chromosome X'
+
+SEXCHR_FILE="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/sexchrom_accessions.csv"
 grep $SPECIES $SEXCHR_FILE
 
-echo 'Panthera_onca,X,CM102116.1' >> $SEXCHR_FILE
-echo 'Panthera_onca,Y,CM102117.1' >> $SEXCHR_FILE
+# Revise those that need revision
 
 sed -i 's/CM099876/NC_135547/g' $SEXCHR_FILE
 sed -i 's/CM099877/NC_135548/g' $SEXCHR_FILE
 
-Capra_hircus # no matches at all
-
-# These species need accession numbers changed from RefSeq to GenBank
-Callithrix_jacchus          GCA_049354715.1    GCF_049354715.1     Yes:GCA-GCF
-Pan_paniscus                GCA_029289425.3    GCF_029289425.2     Yes:GCA-GCF
-Pan_troglodytes             GCA_028858775.2    GCF_028858775.2     Yes:GCA-GCF
-Loxodonta_africana          GCA_030014295.1    GCF_030014295.1     Yes:GCA-GCF
-Urocitellus_parryii         GCA_045843805.1    GCF_045843805.1     Yes:GCA-GCF
-Meles_meles                 GCA_922984935.1    GCF_922984935.1     Yes:GCA-GCF
-Pongo_pygmaeus              GCA_028885625.2    GCF_028885625.2     Yes:GCA-GCF
-Symphalangus_syndactylus    GCF_028878055.3    GCA_028878055.3
-Gorilla_gorilla             GCA_029281585.3    GCF_029281585.2    Yes:GCA-GCF
-Pongo_abelii                GCF_028885655.2    GCA_028885655.2    Yes:GCA-GCF
-
-rm -r Callithrix_jacchus__white-tufted-ear_marmoset__HLcalJac5__GCF_011100555.1
-rm -r Callithrix_jacchus__white-tufted-ear_marmoset__calJac4__GCF_009663435.1/
-rm -r Pan_troglodytes__chimpanzee__panTro6__GCF_002880755.1/
-rm -r Loxodonta_africana__African_savanna_elephant__HLloxAfr5B__GCA_030020305.1/
-rm -r Urocitellus_parryii__Arctic_ground_squirrel__HLuroPar1__GCA_003426925.1/
-rm -r Urocitellus_parryii__Arctic_ground_squirrel__HLuroPar2B__GCA_045843765.1/
-rm -r Pongo_pygmaeus__Bornean_orangutan__HLponPyg1__GCA_023767775.1/
-rm -r Symphalangus_syndactylus__siamang__HLsymSyn4__GCA_028878055.3/
-rm -r Gorilla_gorilla_gorilla__western_lowland_gorilla__gorGor6__GCF_008122165.1/
-rm -r Pongo_abelii__Sumatran_orangutan__ponAbe3__GCF_002880775.1/
-rm -r Myotis_nattereri__Natterers_bat__HLmyoNat1A__GCA_964212035.1
-rm -r Myotis_nattereri__Natterers_bat__HLmyoNat1B__GCA_964212025.1
-rm -r Myotis_nattereri__Natterers_bat__HLmyoNatt2B__GCA_964212025.2
-rm -r Rhynchonycteris_naso__Proboscis_bat__HLrhyNas2B__GCA_037038555.1
-
-
 cat > PAR.species_chr_region.gaps.txt <<'EOF'
-Balaenoptera_physalus,OZ239531:0-7257636
-Bos_taurus,NC_040105:0-6843483
-Callithrix_jacchus,CM111807:0-1757279
-Camelus_dromedarius,NC_087472:108540129-114202744
-Capra_hircus,CP168640:0-7202443
-Eubalaena_glacialis,NC_083736:0-7069966
-Gorilla_gorilla,NC_073247:0-12039748
-Grampus_griseus,OZ206318:0-7148355
-Homo_sapiens,NC_060947:0-2394410
-Inia_geoffrensis,CM070920:0-7142434
-Loxodonta_africana,CM057446:0-10314587
-Lycaon_pictus,CM082710:0-6575129
-Macaca_nemestrina,NC_092145:158114029-159757195 
-Manis_pentadactyla,NC_080038:0-5004179
-Marmota_flaviventris,NC_092518:0-10556221 
-Meles_meles,OV277448:0-6399546
-Mesoplodon_bidens,OZ073217:135117924-142816029
-Molossus_nigricans,CM078089:0-4370896
-Mustela_nivalis_vulgaris,CM169857:131948904-138477583
-Myotis_nattereri,OZ125678:0-2687171
-Ovis_aries,CP162266:0-7021881
-Ovis_canadensis,NC_091727:0-7072606
-Pan_paniscus,CM055495:0-2524164 
-Pan_troglodytes,CM054457:0-3170188 
-Panthera_onca,CM102116:122788602-130846311
-Pongo_abelii,NC_072008:0-2382235
-Pongo_pygmaeus,CM054653:0-2356740
-Pseudorca_crassidens,NC_090317:127639906-136059651 
-Rhynchocyon_petersi,CM091802:0-20182068
-Rhynchonycteris_naso,CM073052:138579092-142670400
-Symphalangus_syndactylus,NC_072447:0-16994066
-Trichechus_inunguis,CM102173:0-9624845
-Urocitellus_parryii,CM099876:122998411-131433435
+Eubalaena_glacialis,NC_083736.1:0-7069966
+Macaca_nemestrina,NC_092145.1:158149255-159757195 
+Callithrix_jacchus,CM111807.1.1:0-1757279
+Mesoplodon_bidens,OZ073217.1:135117924-142816029
+Inia_geoffrensis,CM070920.1:0-7142434
+Camelus_dromedarius,NC_087472.1:108540129-114202744
+Ovis_canadensis,NC_091727.1:0-7072606
+Manis_pentadactyla,NC_080038.1:0-4881534
+Pan_paniscus,CM055495.2:0-2524164                      
+Marmota_flaviventris,NC_092518.1:0-10347709        
+Balaenoptera_physalus,OZ239531.1:0-7257636
+Pan_troglodytes,CM054457.2:0-3170188          
+Rhynchonycteris_naso,CM073052.1:138579092-142670400
+Ovis_aries,CP162266.1:0-7021881
+Trichechus_inunguis,CM102173.1:0-9558467
+Pseudorca_crassidens,NC_090317.1:127639906-136059651 
+Myotis_nattereri,OZ125678.2:0-1449976
+Rhynchocyon_petersi,CM091802.1:0-20182068
+Grampus_griseus,OZ206318.1:0-7148355
+Mustela_nivalis_vulgaris,OZ211688.1:127035994-138477583
+Capra_hircus,CP168640.1:0-7040093
+Loxodonta_africana,CM057446.1:0-10314587
+Urocitellus_parryii,CM099876.1:122998411-131433435 
+Meles_meles,OV277448.1:0-6387864
+Homo_sapiens,NC_060947.1:0-2394410
+Pongo_pygmaeus,CM054653.2.2:0-2356740
+Symphalangus_syndactylus,CM054533.2:0-16994066
+Gorilla_gorilla,CM054702.2:0-12039748
+Pongo_abelii,NC_072008.2:0-2382235
+Miniopterus_schreibersii,OZ071095.2:103813303-106815783
 EOF
 
 
@@ -205,54 +164,83 @@ echo "Merged gap BED-like table: $out_merged"
 echo "Summary table:            $summary"
 
 ```
-
-## PAR boundaries
+### Species without gaps
+Loxodonta africana has four gaps each of 13 base pairs... this feels a little suspicious to me? Since assemblers can put in any random number of bp for a gap? Excluding it for now.
+```
+cat > species_par.csv <<'EOF'
+Pseudorca_crassidens,127639906-136059651 
+Inia_geoffrensis,0-7142434
+Ovis_canadensis,0-7072606
+Capra_hircus,0-7040093
+Ovis_aries,0-7021881
+Meles_meles,0-6387864
+Pan_troglodytes,0-3170188          
+Pan_paniscus,0-2524164                      
+Homo_sapiens,0-2394410
+Callithrix_jacchus,0-1757279
+Pongo_pygmaeus,NC_072396.2:0-2356740
+Symphalangus_syndactylus,NC_072447.2:0-16994066
+Gorilla_gorilla,NC_073247.2:0-12039748
+Pongo_abelii,NC_072008.2:0-2382235
+EOF
+```
+## 1. Curate annotated genes found in the PARs
+```
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_Gene_analysis/TOGA2_annotations/mammals_TOGAintegrated
 
 cat > PAR.species_chr_region.txt <<'EOF'
-Balaenoptera_physalus,OZ239531:0-7257636
-Bos_taurus,NC_040105:0-6843483
-Callithrix_jacchus,CM111807:0-1757279
-Camelus_dromedarius,NC_087472:108540129-114202744
-Capra_hircus,CP168640:0-7202443
-Eubalaena_glacialis,NC_083736:0-7069966
-Gorilla_gorilla,NC_073247:0-12039748
-Grampus_griseus,OZ206318:0-7148355
-Homo_sapiens,NC_060947:0-2394410
-Inia_geoffrensis,CM070920:0-7142434
-Loxodonta_africana,CM057446:0-10314587
-Lycaon_pictus,CM082710:0-6575129
-Macaca_nemestrina,NC_092145:158114029-159757195 
-Manis_pentadactyla,NC_080038:0-5004179
-Marmota_flaviventris,NC_092518:0-10556221 
-Meles_meles,OV277448:0-6399546
-Mesoplodon_bidens,OZ073217:135117924-142816029
-Molossus_nigricans,CM078089:0-4370896
-Mustela_nivalis_vulgaris,CM169857:131948904-138477583
-Myotis_nattereri,OZ125678:0-2687171
-Ovis_aries,CP162266:0-7021881
-Ovis_canadensis,NC_091727:0-7072606
-Pan_paniscus,CM055495:0-2524164 
-Pan_troglodytes,CM054457:0-3170188 
-Panthera_onca,CM102116:122788602-130846311
-Pongo_abelii,NC_072008:0-2382235
-Pongo_pygmaeus,CM054653:0-2356740
-Pseudorca_crassidens,NC_090317:127639906-136059651 
-Rhynchocyon_petersi,CM091802:0-20182068
-Rhynchonycteris_naso,CM073052:138579092-142670400
-Symphalangus_syndactylus,NC_072447:0-16738677
-Trichechus_inunguis,CM102173:0-9624845
-Urocitellus_parryii,CM099876:122998411-131433435
+Eubalaena_glacialis,NC_083736.1:0-7069966
+Macaca_nemestrina,NC_092145.1:158149255-159757195 
+Callithrix_jacchus,CM111807.1.1:0-1757279
+Mesoplodon_bidens,OZ073217.1:135117924-142816029
+Inia_geoffrensis,CM070920.1:0-7142434
+Camelus_dromedarius,NC_087472.1:108540129-114202744
+Ovis_canadensis,NC_091727.1:0-7072606
+Manis_pentadactyla,NC_080038.1:0-4881534
+Pan_paniscus,CM055495.2:0-2524164                      
+Marmota_flaviventris,NC_092518.1:0-10347709        
+Balaenoptera_physalus,OZ239531.1:0-7257636
+Pan_troglodytes,CM054457.2:0-3170188          
+Rhynchonycteris_naso,CM073052.1:138579092-142670400
+Ovis_aries,CP162266.1:0-7021881
+Trichechus_inunguis,CM102173.1:0-9558467
+Pseudorca_crassidens,NC_090317.1:127639906-136059651 
+Myotis_nattereri,OZ125678.2:0-1449976
+Rhynchocyon_petersi,CM091802.1:0-20182068
+Grampus_griseus,OZ206318.1:0-7148355
+Mustela_nivalis_vulgaris,OZ211688.1:127035994-138477583
+Capra_hircus,CP168640.1:0-7040093
+Loxodonta_africana,CM057446.1:0-10314587
+Urocitellus_parryii,CM099876.1:122998411-131433435 
+Meles_meles,OV277448.1:0-6387864
+Homo_sapiens,NC_060947.1:0-2394410
+Pongo_pygmaeus,CM054653.2.2:0-2356740
+Symphalangus_syndactylus,CM054533.2:0-16994066
+Gorilla_gorilla,CM054702.2:0-12039748
+Pongo_abelii,NC_072008.2:0-2382235
+Miniopterus_schreibersii,OZ071095.2:103813303-106815783
 EOF
+
+Warning: no query_annotation.gtf.gz found for Mustela_nivalis_vulgaris under /data/Wilson_Lab/data/TOGA2_Hiller/Integrated/mammals/Mammalia
+Warning: no query_annotation.gtf.gz found for Miniopterus_schreibersii under /data/Wilson_Lab/data/TOGA2_Hiller/Integrated/mammals/Mammalia
+# Something else is going wrong, idk, the last species with an entry in the output file is Pseudorca crassidens
+
+################################################################################################
+# I need to get updated PAR boundaries from both of these from Simone before continuing!!!!!
+# Mustela and Miniopterus
+################################################################################################
+TOGA_DIR="/data/Wilson_Lab/data/TOGA2_Hiller/Integrated" 
 
 chmod +x find_par_genes_toga.awk 
 ./find_par_genes_toga.awk PAR.species_chr_region.txt > mammals_PAR_genes.tsv
 
 
+cat > PAR.species_chr_region.rerun.txt <<'EOF'
+Mustela_nivalis,OZ211688.1:127035994-138477583
+EOF
+./find_par_genes_toga.awk PAR.species_chr_region.txt > mammals_PAR_genes.tsv
+
 cat > species.txt <<'EOF'
-Lycaon_pictus
-Bos_taurus
-Panthera_onca
-Molossus_nigricans
 Eubalaena_glacialis
 Macaca_nemestrina
 Callithrix_jacchus
@@ -290,11 +278,13 @@ while read -r species; do
 done < species.txt
 
 # Redo the one(s) that didn't work due to naming issues
-# cd /data/Wilson_Lab/data/TOGA2_Hiller/Homo_sapiens_hg38
-# mv Mustela_nivalis_vulgaris__Least_weasel__HLmusNivaVul3A__GCA_057128415.1 Mustela_nivalis__Least_weasel__HLmusNivaVul3A__GCA_057128415.1
 
 grep Mustela_nivalis PAR.species_chr_region.txt | sed 's/_vulgaris//g' > PAR.species_chr_region.redo.txt
 ./find_par_genes_toga.awk PAR.species_chr_region.redo.txt > mammals_PAR_genes.redo.tsv
+
+
+grep Rhynchonycteris_naso PAR.species_chr_region.txt > PAR.species_chr_region.redo.txt
+./find_par_genes_toga.awk PAR.species_chr_region.redo.txt >> mammals_PAR_genes.redo.tsv
 
 
 # Redo the ones that didn't work because of chr naming in TOGA2 files
@@ -302,13 +292,12 @@ cat > species.chrX.txt <<'EOF'
 Pan_paniscus
 Pan_troglodytes
 Pongo_pygmaeus
+Symphalangus_syndactylus
 Gorilla_gorilla
 Pongo_abelii
-Symphalangus_syndactylus
 EOF
 
 
-rm PAR.species_chr_region.chrX.txt
 while read -r species; do
   grep $species PAR.species_chr_region.txt >> PAR.species_chr_region.chrX.txt
 done < species.chrX.txt
@@ -319,6 +308,7 @@ chmod +x find_par_genes_toga.chrX.awk
 # Add human
 gff="/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Homo_sapiens/ncbi_dataset/data/GCF_009914755.1/genomic.gff"
 out="Human_PAR_genes.tsv"
+
 
 awk -F'\t' '
 BEGIN {
@@ -364,12 +354,8 @@ $1 == par_chrom && $3 == "gene" {
 
     gene_biotype = get_attr(attrs, "gene_biotype")
     gbkey = get_attr(attrs, "gbkey")
-
+    
     if (gbkey != "Gene") {
-        next
-    }
-
-    if (gene_biotype != "protein_coding") {
         next
     }
 
@@ -426,11 +412,7 @@ sed -i 's/AMELX/AMEL/g' mammals_PAR_genes.all.tsv
 { head -n 1 mammals_PAR_genes.all.tsv; tail -n +2 mammals_PAR_genes.all.tsv | sort -u; } > mammals_PAR_genes.all.tsv.tmp
 mv mammals_PAR_genes.all.tsv.tmp mammals_PAR_genes.all.tsv
 
-
-
-
-
-# Rscript plot_combined.allgenelabels.mammals.R
+Rscript plot_combined.allgenelabels.mammals.R
 
 # Modify the file to combine major blocks of gene family expansions into a single point
 {
@@ -490,8 +472,8 @@ END {
     flush_block()
 }' > mammals_PAR_genes.all.ZNF_arrays.tsv
 
-# Rscript plot_combined.mammals.R
-# Rscript plot_combined.allgenelabels.mammals.GeneArrays.R
+Rscript plot_combined.mammals.R
+Rscript plot_combined.allgenelabels.mammals.GeneArrays.R
 
 ```
 
@@ -499,9 +481,8 @@ cp mammals_PAR_genes.all.ZNF_arrays.tsv mammals_PAR_genes.all.ZNF_arrays.tsv.sav
 
 grep -v 'LOC' mammals_PAR_genes.all.ZNF_arrays.tsv | grep -v 'LINC' > mammals_PAR_genes.all.ZNF_arrays.tsv.noLOC
 mv mammals_PAR_genes.all.ZNF_arrays.tsv.noLOC mammals_PAR_genes.all.ZNF_arrays.tsv
-
-# Rscript plot_combined.mammals.R
-# Rscript plot_combined.allgenelabels.mammals.GeneArrays.R
+Rscript plot_combined.mammals.R
+Rscript plot_combined.allgenelabels.mammals.GeneArrays.R
 
 ```
 # set a specific gene as the origin
@@ -512,20 +493,12 @@ awk -v GENE="XG" -f orient_to_gene_midpoint.awk \
   mammals_PAR_genes.all.ZNF_arrays.tsv \
   > mammals_PAR_genes.XG_oriented.tsv
 
-# change 2nd shroom2 to shroom2-like
-awk 'BEGIN{OFS="\t"} $1=="Mesoplodon_bidens" && $6=="SHROOM2" {n++; if (n==2) $6="SHROOM2-like"} {print}' \
-  mammals_PAR_genes.all.ZNF_arrays.tsv > mammals_PAR_genes.all.ZNF_arrays.edited.tsv
 
-cp mammals_PAR_genes.all.ZNF_arrays.tsv mammals_PAR_genes.all.ZNF_arrays.tsv.unedited
-mv mammals_PAR_genes.all.ZNF_arrays.edited.tsv mammals_PAR_genes.all.ZNF_arrays.tsv
 
-# Rscript plot_combined.mammals.geneoriented.R 
+Rscript plot_combined.mammals.geneoriented.R 
 
-# Rscript plot_combined.mammals.geneoriented.XG.R 
 
-# Rscript plot_combined.mammals.geneoriented.XG_and_SHROOM2.R 
 
-Rscript plot_combined_mammals.geneoriented.XG_and_SHROOM2.conserved_genes.R
 
 # Compute LOC freq
 
@@ -661,9 +634,6 @@ print(filtered, n = Inf, width = Inf)
 telomere_file="species.telomeres.txt"
 
 cat > "$telomere_file" <<'EOF'
-Bos_taurus,L,NO
-Lycaon_pictus,L,YES
-Panthera_onca,L,YES
 Eubalaena_glacialis,L,YES
 Macaca_nemestrina,R,YES
 Callithrix_jacchus,L,YES
@@ -830,68 +800,3 @@ chmod -R g+rwx /data/Wilson_Lab/data/VGP_genomes_phase1/
 chmod -R g+rwx /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/
 chmod -R g+rwx /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists
 chmod -R g+rwx /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles
-
-
-
-# compute gene freq
-```
-library(dplyr)
-library(readr)
-
-df <- read_tsv("mammals_PAR_genes.all.ZNF_arrays.tsv.unedited", show_col_types = FALSE)
-library(dplyr)
-library(readr)
-
-gene_species_counts <- df %>%
-  filter(InPAR %in% c("Y", "Edge")) %>%
-  distinct(GeneName, Species) %>%
-  group_by(GeneName) %>%
-  summarise(
-    NumSpeciesInPAR = n(),
-    SpeciesInPAR = paste(sort(Species), collapse = ","),
-    .groups = "drop"
-  ) %>%
-  arrange(desc(NumSpeciesInPAR), GeneName)
-
-write_tsv(gene_species_counts, "genes_num_species_in_PAR.tsv")
-```
-Balaenoptera_physalus
-Camelus_dromedarius
-Capra_hircus
-Eubalaena_glacialis
-Gorilla_gorilla
-Grampus_griseus
-Homo_sapiens
-Inia_geoffrensis
-Loxodonta_africana
-Macaca_nemestrina
-Manis_pentadactyla
-Marmota_flaviventris
-Meles_meles
-Mesoplodon_bidens
-Molossus_nigricans
-Mustela_nivalis_vulgaris
-Myotis_nattereri
-Ovis_aries
-Ovis_canadensis
-Pan_paniscus
-Pan_troglodytes
-Pongo_abelii
-Pongo_pygmaeus
-Pseudorca_crassidens
-Rhynchocyon_petersi
-Rhynchonycteris_naso
-Symphalangus_syndactylus
-Trichechus_inunguis
-Urocitellus_parryii
-
-
-# Compute number of genes in the PAR for both rodent taxa
-```
-grep Urocitellus_parry mammals_PAR_genes.XG_oriented.tsv | awk '{print $7}' | grep Y | wc -l
-grep Urocitellus_parry mammals_PAR_genes.XG_oriented.tsv | awk '{print $7}' | grep Y | wc -l
-
-grep Marmota_flaviventris mammals_PAR_genes.XG_oriented.tsv | awk '{print $7}' | grep Y | wc -l
-grep Marmota_flaviventris mammals_PAR_genes.XG_oriented.tsv | awk '{print $7}' | grep Edge | wc -l
-
-```

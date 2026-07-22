@@ -119,11 +119,12 @@ tree_filtered <- keep.tip(
 )
 
 
-tree_filtered <- ape::rotate(tree_filtered, node = 29)
-tree_filtered <- ape::rotate(tree_filtered, node = 47)
-tree_filtered <- ape::rotate(tree_filtered, node = 48)
-tree_filtered <- ape::rotate(tree_filtered, node = 49)
+tree_filtered <- ape::rotate(tree_filtered, node = 31)
 tree_filtered <- ape::rotate(tree_filtered, node = 50)
+tree_filtered <- ape::rotate(tree_filtered, node = 51)
+tree_filtered <- ape::rotate(tree_filtered, node = 52)
+tree_filtered <- ape::rotate(tree_filtered, node = 53)
+tree_filtered <- ape::rotate(tree_filtered, node = 54)
 
 p_tree_tmp <- ggtree(tree_filtered, ladderize = FALSE)
 

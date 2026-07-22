@@ -11,6 +11,8 @@ library(scales)
 # Gene to use as ordinal origin point
 GENE <- "DYM"
 
+INVERT_PAR_ORDER_SPECIES <- "Passer_domesticus"
+
 # How many ordinal positions to show on either side of GENE
 ORDINAL_MIN <- -30
 ORDINAL_MAX <- 30
@@ -88,7 +90,8 @@ df <- df %>%
 # ============================================================
 
 genes_in_PAR_any_species <- df %>%
-  filter(In_PAR %in% c("Y", "Edge", "N")) %>%
+  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
+  filter(Species %in% c("Taeniopygia_guttata")) %>%
   distinct(Gene) %>%
   pull(Gene)
 
@@ -204,7 +207,7 @@ species_par <- species_par %>%
 # ============================================================
 
 p_tree <- ggtree(tree_filtered, ladderize = FALSE) +
-  geom_tiplab(size = 3, align = FALSE) +
+  geom_tiplab(size = 5, align = FALSE) +
   xlim_tree(0.4) +
   coord_cartesian(clip = "off") +
   theme_tree2() +
@@ -263,7 +266,7 @@ p_bar <- ggplot(intersection_counts, aes(x = intersection_index, y = n_genes)) +
   labs(
     x = NULL,
     y = NULL,
-    title = "Genes in intersection"
+    title = NULL
   ) +
   theme_bw() +
   theme(
@@ -344,11 +347,25 @@ if (length(missing_origin_species) > 0) {
   )
 }
 
+
 par_genes <- par_genes %>%
   inner_join(gene_origin, by = "Species") %>%
   mutate(
     PAR_order = raw_PAR_order - origin_raw_PAR_order
   ) %>%
+  group_by(Species) %>%
+  mutate(
+    par_min_order = min(PAR_order[In_PAR %in% c("Y", "Edge")], na.rm = TRUE),
+    par_max_order = max(PAR_order[In_PAR %in% c("Y", "Edge")], na.rm = TRUE),
+    PAR_order = if_else(
+      Species == INVERT_PAR_ORDER_SPECIES &
+        In_PAR %in% c("Y", "Edge"),
+      par_min_order + par_max_order - PAR_order,
+      PAR_order
+    )
+  ) %>%
+  ungroup() %>%
+  select(-par_min_order, -par_max_order) %>%
   filter(
     PAR_order >= ORDINAL_MIN,
     PAR_order <= ORDINAL_MAX
@@ -358,7 +375,7 @@ plot_x_min <- min(par_genes$PAR_order, na.rm = TRUE) - 2
 plot_x_max <- plot_x_min + (ORDINAL_MAX - ORDINAL_MIN)
 
 gene_freq <- par_genes %>%
-  filter(In_PAR == "Y") %>%
+  filter(In_PAR %in% c("Y", "Edge")) %>%
   distinct(Species, Gene) %>%
   count(Gene, name = "species_frequency")
 
@@ -440,6 +457,74 @@ par_array_genes_edge <- par_genes %>%
 ref_species_labels <- par_genes %>%
   filter(Species == "Taeniopygia_guttata")
 
+# ------------------------------------------------------------
+# Label the last PAR/Edge gene in each species
+# "Last" means the greatest plotted PAR_order after any inversion.
+# ------------------------------------------------------------
+
+last_par_gene_labels <- par_genes %>%
+  filter(
+    In_PAR %in% c("Y", "Edge"),
+    !is_array_gene
+  ) %>%
+  group_by(Species) %>%
+  slice_max(
+    order_by = PAR_order,
+    n = 1,
+    with_ties = FALSE
+  ) %>%
+  ungroup()
+
+# ============================================================
+# Gene-level PAR/Edge conservation panel
+# Bar above each Homo sapiens gene = number of genomes where
+# that gene is found in PAR or Edge
+# ============================================================
+
+gene_par_edge_counts <- df %>%
+  filter(Gene %in% genes_in_PAR_any_species) %>%
+  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
+  filter(In_PAR %in% c("Y", "Edge")) %>%
+  distinct(Species, Gene) %>%
+  count(Gene, name = "n_genomes_PAR_or_Edge")
+
+finch_gene_par_edge_counts <- ref_species_labels %>%
+  distinct(Gene, Gene_label, PAR_order) %>%
+  left_join(gene_par_edge_counts, by = "Gene") %>%
+  mutate(
+    n_genomes_PAR_or_Edge = replace_na(n_genomes_PAR_or_Edge, 0L)
+  )
+
+p_gene_par_edge_count <- ggplot(
+  finch_gene_par_edge_counts,
+  aes(x = PAR_order, y = n_genomes_PAR_or_Edge)
+) +
+  geom_col(width = 0.8) +
+  scale_x_continuous(
+    breaks = seq(
+      ceiling(plot_x_min / 10) * 10,
+      floor(plot_x_max / 10) * 10,
+      by = 10
+    ),
+    limits = c(plot_x_min, plot_x_max),
+    expand = expansion(mult = c(0, 0.03))
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.08))
+  ) +
+  labs(
+    x = NULL,
+    y = NULL
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(5.5, 5.5, 0, 5.5)
+  )
+
 ortholog_segments <- par_genes %>%
   group_by(Species, Gene) %>%
   slice_min(abs(PAR_order), n = 1, with_ties = FALSE) %>%
@@ -505,25 +590,25 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
       yend = yend
     ),
     color = "black",
-    linewidth = 1,
+    linewidth = 0.5,
     alpha = 1,
     inherit.aes = FALSE
   ) +
   geom_point(
     data = nonpar_genes,
-    color = "gray80",
-    size = 1.2
+    color = "#f1e1f9",
+    size = 3
   ) +
   geom_point(
     data = nonpar_array_genes,
-    color = "gray80",
+    color = "#f1e1f9",
     shape = 24,
     size = 2
   ) +
   geom_point(
     data = par_genes_y,
     aes(color = species_frequency),
-    size = 1.5
+    size = 3
   ) +
   geom_point(
     data = par_array_genes_y,
@@ -534,7 +619,7 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
   geom_point(
     data = par_genes_edge,
     color = "blue",
-    size = 1.5
+    size = 3
   ) +
   geom_point(
     data = par_array_genes_edge,
@@ -546,15 +631,28 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     data = ref_species_labels,
     aes(label = Gene_label),
     color = "black",
-    angle = 45,
+    angle = 90,
     hjust = 0,
-    vjust = -0.5,
-    nudge_y = 0.08,
-    size = 2.5
+    vjust = 0.5,
+    nudge_y = 0.15,
+    size = 4
+  ) +
+  geom_text(
+    data = last_par_gene_labels,
+    aes(
+      x = PAR_order,
+      y = species_index,
+      label = Gene_label
+    ),
+    inherit.aes = FALSE,
+    color = "black",
+    hjust = -0.15,
+    vjust = 1.5,
+    size = 4
   ) +
   scale_color_gradient(
-    low = "#fcbba1",
-    high = "#cb181d",
+    low = "#8a65b9",
+    high = "#8a65b9",
     name = "PAR gene\nspecies frequency"
   ) +
   geom_point(
@@ -564,7 +662,7 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     shape = 23,
     fill = "black",
     color = "black",
-    size = 2
+    size = 3
   ) +
   geom_point(
     data = telomere_absent,
@@ -573,7 +671,7 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     shape = 23,
     fill = "white",
     color = "black",
-    size = 2
+    size = 3
   ) +
   scale_x_continuous(
     breaks = seq(
@@ -593,17 +691,28 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
   labs(
     x = paste0("Ordinal gene order relative to ", GENE),
     y = NULL,
-    title = paste0("PAR gene order centered on ", GENE)
+    title = NULL
   ) +
+  coord_cartesian(clip = "off") +
   theme_bw() +
   theme(
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
+    axis.title.x = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
     panel.grid.major.y = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.grid.minor = element_blank(),
-    plot.title = element_text(size = 10, face = "bold")
-  )
+    plot.title = element_text(size = 10, face = "bold"),
+    legend.position = "none",
+    plot.margin = margin(
+      t = 60,
+      r = 10,
+      b = 5.5,
+      l = 5.5
+    ),
+    panel.border = element_blank()
+)
 
 # ============================================================
 # 4. PAR size panel
@@ -625,12 +734,14 @@ p_par_size <- ggplot(par_size, aes(x = par_size_Mb, y = Species)) +
     expand = expansion(mult = c(0, 0.08))
   ) +
   labs(
-    x = "PAR size",
+    x = NULL,
     y = NULL,
-    title = "PAR size"
+    title = NULL
   ) +
   theme_bw() +
   theme(
+    axis.title.x = element_text(size = 14),
+    axis.text.x = element_text(size = 12),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     panel.grid.major.y = element_blank(),
@@ -642,20 +753,21 @@ p_par_size <- ggplot(par_size, aes(x = par_size_Mb, y = Species)) +
 # Combine panels
 # ============================================================
 
+
 blank_tree_space <- ggplot() + theme_void()
 blank_gene_space <- ggplot() + theme_void()
 blank_size_space <- ggplot() + theme_void()
 
-top_row <- blank_tree_space + p_bar + blank_gene_space + blank_size_space +
-  plot_layout(widths = c(3, 2.5, 20, 2))
+top_row <- blank_tree_space + blank_size_space + p_gene_par_edge_count +
+  plot_layout(widths = c(3, 2, 20))
 
-bottom_row <- p_tree + p_matrix + p_gene_order + p_par_size +
-  plot_layout(widths = c(3, 2.5, 20, 2))
+bottom_row <- p_tree + p_par_size + p_gene_order +
+  plot_layout(widths = c(3, 2, 20))
 
 combined_plot <- top_row / bottom_row +
-  plot_layout(heights = c(1.2, 4)) +
+  plot_layout(heights = c(0.5, 4)) +
   plot_annotation(
-    title = "Phylogeny, PAR gene intersections, PAR gene order, and PAR size",
+    title = "Phylogeny, PAR size, and PAR gene order",
     theme = theme(
       plot.title = element_text(size = 14, face = "bold")
     )
@@ -665,6 +777,6 @@ ggsave(
   filename = paste0("combined_phylogeny_upset_gene_order_PAR_size.", GENE, ".pdf"),
   plot = combined_plot,
   width = 24,
-  height = 8,
+  height = 18,
   limitsize = FALSE
 )

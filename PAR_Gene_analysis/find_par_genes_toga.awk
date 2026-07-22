@@ -39,9 +39,11 @@ function dirname(path,    subpath) {
 function norm_chr(c) {
     c = trim(c)
 
-    if (c ~ /^(NC|NW|NT|NZ|CM|JH|KI|GL|OZ)_[A-Za-z0-9]+(\.[0-9]+)+$/) {
-        sub(/(\.[0-9]+)+$/, "", c)
-    }
+    # Strip terminal accession version:
+    # NC_083736.1 -> NC_083736
+    # CM169857.1  -> CM169857
+    # OZ239531.1  -> OZ239531
+    sub(/\.[0-9]+$/, "", c)
 
     return c
 }

@@ -33,7 +33,7 @@ mb_endpoints_only <- function(lims) {
       sprintf("%.1f", lims[2] / 1e6)
     )
   )
-}``
+}
 
 # ----------------------------
 # Paths
@@ -325,11 +325,12 @@ p_qry <- ggplot(dt) +
   scale_x_continuous(
     limits = c(0, NA),
     breaks = function(lims) c(lims[1], mean(lims), lims[2]),
-    labels = function(lims) c(
-      "0",
-      "",
-      sprintf("%.1f", lims[2] / 1e6)
-    )
+    labels = function(breaks) {
+      out <- rep("", length(breaks))
+      out[1] <- "0"
+      out[length(out)] <- sprintf("%.1f", max(breaks) / 1e6)
+      out
+    }
   ) +
   scale_y_continuous(
     breaks = NULL,
@@ -374,11 +375,12 @@ p_ref <- ggplot(dt) +
   scale_x_continuous(
     limits = c(0, NA),
     breaks = function(lims) c(lims[1], mean(lims), lims[2]),
-    labels = function(lims) c(
-      "0",
-      "",
-      sprintf("%.1f", lims[2] / 1e6)
-    )
+    labels = function(breaks) {
+      out <- rep("", length(breaks))
+      out[1] <- "0"
+      out[length(out)] <- sprintf("%.1f", max(breaks) / 1e6)
+      out
+    }
   ) +
   scale_y_continuous(
     breaks = seq_len(n_rows),
@@ -500,7 +502,7 @@ p <- (p_tree | p_qry | p_ref) +
 height_in <- max(20, n_rows * 0.09)
 
 out_png <- sprintf(
-  "continuous_percentID.ALLFILES.with_tree_and_chr_boxes.thr%s.len%d.png",
+  "continuous_percentID.ALLFILES.with_tree_and_chr_boxes.thr%s.len%d.pdf",
   thr_tag,
   min_aln
 )

@@ -138,14 +138,18 @@ mkdir -p /data/Wilson_Lab/data/VGP_genomes_phase1/genomeark_annotations
 N=$(($(wc -l < "${ARK}") - 1))
 sbatch --array=1-"$N" --export=ALL,ARK="${ARK}" 0f_download_genomeark_faa.sh
 ```
-### Only Inia geoffresnsis lacks one, download it specifically
+### Only Inia geoffrensis lacks one, download it specifically
 cd mIniGeo1
 source myconda
 mamba activate genespace
 gffread mIniGeo1.gff -g mIniGeo1.fa -x mIniGeo1.cds
+
 ## Make symlink for fna files
-ln -sf ${BASE}/genomes/${SPECIES}/ncbi_dataset/data/GCA_051312515.2/GCA_051312515.2_rAnnSte1.2_hap1_genomic.fna ${SP_ID}.fa 
-ln -sf ${BASE}/genomes/${SPECIES}/ncbi_dataset/data/GCA_051312515.2/GCA_051312515.2_rAnnSte1.2_hap1_genomic.fna  /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Anniella_stebbinsi/Anniella_stebbinsi.fna
+ln -sf /data/Wilson_Lab/data/VGP_genomes_phase1/genomeark_annotations/mIniGeo1/mIniGeo1.fa  /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Inia_geoffrensis/Inia_geoffrensis.fna
+ln -sf /data/Wilson_Lab/data/VGP_genomes_phase1/genomeark_annotations/mIniGeo1/mIniGeo1.cds  /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Inia_geoffrensis/Inia_geoffrensis.cds
+ln -sf /data/Wilson_Lab/data/VGP_genomes_phase1/genomeark_annotations/mIniGeo1/mIniGeo1.gff  /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Inia_geoffrensis/Inia_geoffrensis.gff
+
+
 ```
 # -------- user inputs --------
 ARK="${ARK:-/data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/genomeark_species.lacks_NCBI_gff.csv}"
@@ -214,6 +218,7 @@ mamba activate genespace
 mkdir -p /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/genespace_genomeark
  
 Rscript 0g_prepare_genespace_genomeark.r /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/genespace_genomeark/ /data/Wilson_Lab/data/VGP_genomes_phase1/genomeark_annotations/
+
 ```
 ## Rename all bed and peptide files to species names, not IDs
 ```

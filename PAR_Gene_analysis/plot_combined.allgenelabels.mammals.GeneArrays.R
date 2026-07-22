@@ -119,11 +119,60 @@ tree_filtered <- keep.tip(
 )
 
 
-tree_filtered <- ape::rotate(tree_filtered, node = 29)
-tree_filtered <- ape::rotate(tree_filtered, node = 47)
-tree_filtered <- ape::rotate(tree_filtered, node = 48)
-tree_filtered <- ape::rotate(tree_filtered, node = 49)
+tree_filtered <- ape::rotate(tree_filtered, node = 31)
 tree_filtered <- ape::rotate(tree_filtered, node = 50)
+tree_filtered <- ape::rotate(tree_filtered, node = 51)
+tree_filtered <- ape::rotate(tree_filtered, node = 52)
+tree_filtered <- ape::rotate(tree_filtered, node = 53)
+tree_filtered <- ape::rotate(tree_filtered, node = 54)
+
+
+# ============================================================
+# Diagnostic tree with node numbers for choosing rotations
+# ============================================================
+
+
+
+test_tree_png <- "tree_filtered_node_numbers.png"
+
+p_tree_nodes <- ggtree(tree_filtered, ladderize = FALSE) +
+  geom_tree() +
+  
+  # Tip labels
+  geom_tiplab(size = 3, align = FALSE) +
+  
+  # Internal node numbers
+  geom_text2(
+    aes(label = node, subset = !isTip),
+    hjust = -0.3,
+    vjust = -0.3,
+    size = 3,
+    color = "red"
+  ) +
+  
+  # Optional: tip node numbers too, useful for debugging
+  geom_text2(
+    aes(label = node, subset = isTip),
+    hjust = 1.2,
+    vjust = -0.4,
+    size = 2.5,
+    color = "blue"
+  ) +
+  
+  xlim_tree(0.6) +
+  coord_cartesian(clip = "off") +
+  theme_tree2() +
+  theme(
+    plot.margin = margin(5.5, 80, 5.5, 5.5)
+  )
+
+ggsave(
+  filename = test_tree_png,
+  plot = p_tree_nodes,
+  width = 10,
+  height = max(6, length(tree_filtered$tip.label) * 0.22),
+  dpi = 300
+)
 
 p_tree_tmp <- ggtree(tree_filtered, ladderize = FALSE)
 

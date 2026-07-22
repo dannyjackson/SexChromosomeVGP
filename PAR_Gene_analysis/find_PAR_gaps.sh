@@ -2,7 +2,7 @@
 
 module load bedtools seqkit
 
-PAR_FILE="PAR.species_chr_region.txt"
+PAR_FILE="PAR.species_chr_region.gaps.txt"
 base="/data/Wilson_Lab/data/VGP_genomes_phase1/symlinks"
 
 outdir="PAR_gap_results"

@@ -13,7 +13,7 @@ GENE <- "SHROOM2"
 
 # How many ordinal positions to show on either side of GENE
 ORDINAL_MIN <- -65
-ORDINAL_MAX <- 35
+ORDINAL_MAX <- 36
 
 gene_file <- "mammals_PAR_genes.all.ZNF_arrays.tsv"
 
@@ -125,12 +125,12 @@ tree_filtered <- keep.tip(
   intersect(tree$tip.label, species_cols)
 )
 
-
-tree_filtered <- ape::rotate(tree_filtered, node = 29)
-tree_filtered <- ape::rotate(tree_filtered, node = 47)
-tree_filtered <- ape::rotate(tree_filtered, node = 48)
-tree_filtered <- ape::rotate(tree_filtered, node = 49)
+tree_filtered <- ape::rotate(tree_filtered, node = 31)
 tree_filtered <- ape::rotate(tree_filtered, node = 50)
+tree_filtered <- ape::rotate(tree_filtered, node = 51)
+tree_filtered <- ape::rotate(tree_filtered, node = 52)
+tree_filtered <- ape::rotate(tree_filtered, node = 53)
+tree_filtered <- ape::rotate(tree_filtered, node = 54)
 
 p_tree_tmp <- ggtree(tree_filtered, ladderize = FALSE)
 
@@ -165,6 +165,52 @@ p_tree <- ggtree(tree_filtered, ladderize = FALSE) +
     axis.ticks.x = element_blank(),
     plot.margin = margin(5.5, 5.5, 5.5, 5.5)
   )
+
+
+# ============================================================
+# TEST: Diagnostic tree with node numbers for choosing rotations
+# ============================================================
+
+test_tree_png <- "tree_filtered_node_numbers.png"
+
+p_tree_nodes <- ggtree(tree_filtered, ladderize = FALSE) +
+  geom_tree() +
+  
+  # Tip labels
+  geom_tiplab(size = 3, align = FALSE) +
+  
+  # Internal node numbers
+  geom_text2(
+    aes(label = node, subset = !isTip),
+    hjust = -0.3,
+    vjust = -0.3,
+    size = 3,
+    color = "red"
+  ) +
+  
+  # Optional: tip node numbers too, useful for debugging
+  geom_text2(
+    aes(label = node, subset = isTip),
+    hjust = 1.2,
+    vjust = -0.4,
+    size = 2.5,
+    color = "blue"
+  ) +
+  
+  xlim_tree(0.6) +
+  coord_cartesian(clip = "off") +
+  theme_tree2() +
+  theme(
+    plot.margin = margin(5.5, 80, 5.5, 5.5)
+  )
+
+ggsave(
+  filename = test_tree_png,
+  plot = p_tree_nodes,
+  width = 10,
+  height = max(6, length(tree_filtered$tip.label) * 0.22),
+  dpi = 300
+)
 
 # ============================================================
 # 2. UpSet-style intersection panel
@@ -303,6 +349,9 @@ par_genes <- par_genes %>%
     PAR_order >= ORDINAL_MIN,
     PAR_order <= ORDINAL_MAX
   )
+
+plot_x_min <- min(par_genes$PAR_order, na.rm = TRUE) - 2
+plot_x_max <- plot_x_min + (ORDINAL_MAX - ORDINAL_MIN)
 
 gene_freq <- par_genes %>%
   distinct(Species, Gene) %>%
@@ -499,8 +548,8 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     size = 2.5
   ) +
   scale_color_gradient(
-    low = "lightcoral",
-    high = "red1",
+    low = "#fcbba1",
+    high = "#cb181d",
     name = "PAR gene\nspecies frequency"
   ) +
   geom_point(
@@ -522,8 +571,13 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     size = 2
   ) +
   scale_x_continuous(
-    breaks = seq(ORDINAL_MIN, ORDINAL_MAX, by = 10),
-    limits = c(ORDINAL_MIN, ORDINAL_MAX)
+    breaks = seq(
+      ceiling(plot_x_min / 10) * 10,
+      floor(plot_x_max / 10) * 10,
+      by = 10
+    ),
+    limits = c(plot_x_min, plot_x_max),
+    expand = expansion(mult = c(0, 0))
   ) +
   scale_y_continuous(
     breaks = seq_along(species_order),
@@ -602,7 +656,7 @@ combined_plot <- top_row / bottom_row +
   )
 
 ggsave(
-  filename = paste0("combined_phylogeny_upset_gene_order_PAR_size.", GENE, ".pdf"),
+  filename = paste0("combined_phylogeny_upset_gene_order_PAR_size.onegene.", GENE, ".pdf"),
   plot = combined_plot,
   width = 24,
   height = 8,

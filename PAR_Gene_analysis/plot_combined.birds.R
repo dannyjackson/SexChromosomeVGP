@@ -77,6 +77,15 @@ df <- df %>%
   )
 
 # ============================================================
+# Drop genes excluded from all plots/analyses
+# ============================================================
+
+genes_to_drop <- c("LOC121469005")
+
+df <- df %>%
+  filter(!Gene %in% genes_to_drop)
+
+# ============================================================
 # Keep genes that are in the PAR in at least one species
 # ============================================================
 
@@ -119,7 +128,6 @@ tree_filtered <- keep.tip(
 )
 
 
-tree_filtered <- ape::rotate(tree_filtered, node = 27)
 tree_filtered <- ape::rotate(tree_filtered, node = 28)
 tree_filtered <- ape::rotate(tree_filtered, node = 29)
 tree_filtered <- ape::rotate(tree_filtered, node = 30)
@@ -127,6 +135,7 @@ tree_filtered <- ape::rotate(tree_filtered, node = 31)
 tree_filtered <- ape::rotate(tree_filtered, node = 32)
 tree_filtered <- ape::rotate(tree_filtered, node = 33)
 tree_filtered <- ape::rotate(tree_filtered, node = 34)
+tree_filtered <- ape::rotate(tree_filtered, node = 35)
 
 p_tree_tmp <- ggtree(tree_filtered, ladderize = FALSE)
 
@@ -264,6 +273,7 @@ par_genes <- df %>%
   filter(PAR_order <= 90)
 
 gene_freq <- par_genes %>%
+  filter(In_PAR == "Y") %>%
   distinct(Species, Gene) %>%
   count(Gene, name = "species_frequency")
 
@@ -413,8 +423,8 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     size = 2.5
   ) +
   scale_color_gradient(
-    low = "lightcoral",
-    high = "red1",
+    low = "#fcbba1",
+    high = "#cb181d",
     name = "PAR gene\nspecies frequency"
   ) +
   geom_point(
@@ -522,3 +532,4 @@ ggsave(
   height = 8,
   limitsize = FALSE
 )
+
