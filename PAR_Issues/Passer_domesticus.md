@@ -496,8 +496,8 @@ samtools sort "bam_files/${run}.bam" -o "sorted_bam_files/${run}.sorted.bam"
 
 samtools index "sorted_bam_files/${run}.sorted.bam"
 ```
-# Call variants
-## First, generate list of chromosomes
+## Call variants
+### First, generate list of chromosomes
 ```
 module load samtools
 REF_GENOME="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_issues/Passer_domesticus/shortread/ref_without_NC_087511.1.fa"
@@ -505,7 +505,7 @@ samtools faidx "$REF_GENOME"
 
 cut -f1 "${REF_GENOME}.fai" > contigs.txt
 ```
-## Then, call variants on the Z
+### Then, call variants on the Z
 ```
 #!/bin/bash
 #SBATCH --job-name=callvariants
@@ -544,7 +544,7 @@ bcftools mpileup \
 bcftools index --threads "$SLURM_CPUS_PER_TASK" "${contig}.bcf"
 ```
 
-# Compute average heterozygosity
+## Compute average heterozygosity
 ```
 mkdir -p heterozygosity
 module load vcftools bcftools
@@ -556,7 +556,7 @@ VCF=NC_087512.1.renamed.vcf.gz
 vcftools --gzvcf "$VCF" --het --out heterozygosity/NC_087512.1
 ```
 
-# Compute average heterozygosity from these output files using this equation: Observed heterozygosity H_O = (N_Sites - O(HOM)) / N_Sites (from the .het file)
+## Compute average heterozygosity from these output files using this equation: Observed heterozygosity H_O = (N_Sites - O(HOM)) / N_Sites (from the .het file)
 ```
 CHROM=NC_087512.1
 infile=heterozygosity/"${CHROM}.het"
@@ -576,7 +576,7 @@ NR==1 {print $0, "Sex"; next}
 {$7 = ($6 < 0.1 ? "Male" : "Female"); print}
 ' "$outfile" > "${outfile%.txt}_sex.txt"
 ```
-# compute windowed heterozygosity
+## compute windowed heterozygosity
 ```
 ### Heterozygosity
 VCF=NC_087512.1.renamed.vcf.gz
@@ -704,7 +704,7 @@ echo "Wrote: $HETOUT"
 
 head $HETOUT
 ```
-# Plot in R
+## Plot in R
 
 ```
 # --- packages ---
@@ -952,7 +952,7 @@ ggsave(
   dpi = 300
 )
 ```
-# Make stepwise plot of differences in heterozygosity between males and females
+### Make stepwise plot of differences in heterozygosity between males and females
 ```
 # ============================================================
 # Female:Male heterozygosity ratio across Z chromosome
