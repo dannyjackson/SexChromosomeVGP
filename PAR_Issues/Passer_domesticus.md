@@ -39,14 +39,7 @@ minimap2 -ax map-hifi --secondary=no -t 24 "$FASTA" "$FASTQ1" "$FASTQ2" | samtoo
 samtools index -@ 8 bPasDom1.hifi_vs_hap1.bam
 ```
 
-Check status:
-grep 'worker_pipeline' slurm_output/align_passer_domesticus_*.err | awk '{sum += $3} END {print sum}'
-
-2,632,785
-
-grep -c 'worker_pipeline' slurm_output/align_passer_domesticus_*.err | wc -l
-
-Look for split alignemtns:
+# Look for split alignments:
 
 ```
 BAM=bPasDom1.hifi_vs_hap1.bam
@@ -105,8 +98,8 @@ sort -k2 -n spanning_reads_1kb.txt | head -n 50
 samtools view "$BAM" "NC_087512.1:670000-682000" | awk '{print $1,$2,$4,$5,$6}'
 
 awk '$1 < 676000 && $2 > 676000' read_spans.tsv
-
-# make a plot 
+```
+# make a plot of overlapping reads
 ```
 library(Rsamtools)
 library(GenomicAlignments)
