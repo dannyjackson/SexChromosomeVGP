@@ -1,6 +1,6 @@
 # Passer domesticus PAR inversion investigation
 
-Download the raw reads
+### Download the raw reads
 ```
 cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_issues
 mkdir -p Passer_domesticus
@@ -39,7 +39,7 @@ minimap2 -ax map-hifi --secondary=no -t 24 "$FASTA" "$FASTQ1" "$FASTQ2" | samtoo
 samtools index -@ 8 bPasDom1.hifi_vs_hap1.bam
 ```
 
-# Look for split alignments:
+### Look for split alignments:
 
 ```
 BAM=bPasDom1.hifi_vs_hap1.bam
@@ -99,7 +99,7 @@ samtools view "$BAM" "NC_087512.1:670000-682000" | awk '{print $1,$2,$4,$5,$6}'
 
 awk '$1 < 676000 && $2 > 676000' read_spans.tsv
 ```
-# make a plot of overlapping reads
+### make a plot of overlapping reads
 ```
 library(Rsamtools)
 library(GenomicAlignments)
@@ -170,7 +170,7 @@ p <- ggplot(df_primary) +
 ggsave("PAR_nonPAR_boundary.png", p)
 
 ```
-# plot wider region
+### plot wider region
 ```
 library(Rsamtools)
 library(GenomicAlignments)
@@ -247,7 +247,7 @@ ggsave(
 )
 
 ```
-# Plot mean depth 650-1000kb
+### Plot mean depth 650-1000kb
 ```
 samtools depth -aa -r "NC_087512.1:650000-1000000" bPasDom1.hifi_vs_hap1.bam > depth_650_1000kb.txt
 
@@ -279,7 +279,7 @@ ggsave(
   dpi = 300
 )
 ```
-# Plot mean depth 0-1000kb
+### Plot mean depth 0-1000kb
 ```
 
 samtools depth -aa -r "NC_087512.1:0-1000000" bPasDom1.hifi_vs_hap1.bam > depth_0_1000kb.txt
@@ -314,7 +314,7 @@ ggsave(
 )
 ```
 
-# Identify the exact point with no depth of coverage
+### Identify the exact point with no depth of coverage
 ```
 awk '$3 == 0 {print}' depth_650_1000kb.txt | head
 
@@ -328,11 +328,11 @@ NC_087512.1     676237  1
 NC_087512.1     676469  1
 NC_087512.1     676818  0
 NC_087512.1     677549  1
+```
 
-########################################################################################################
 # Align short read genomes to the assembly and look for signals of recombination suppression
-########################################################################################################
 
+## Accessions of short reads:
 ```
 ERR2697464
 ERR2697465
