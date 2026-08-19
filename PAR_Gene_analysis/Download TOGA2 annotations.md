@@ -31,6 +31,29 @@ while read -r species; do
     grep "${species}" subdirs.txt >> mammals_PAR.txt
 done < /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_Gene_analysis/mammals/species_for_blast_array.txt
 
+``` 
+
+base="https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/"
+subdirs_file="mammals_PAR.txt"
+
+mkdir -p logs
+
+while IFS= read -r subdir || [[ -n "$subdir" ]]; do
+  # Skip empty lines and comments.
+  [[ -z "$subdir" || "$subdir" == \#* ]] && continue
+
+  echo "Downloading query_annotation files from ${subdir}"
+
+  wget -c -r -l 1 -np -nH --cut-dirs=4 \
+    --reject "index.html*" \
+    --accept "query_annotation*" \
+    "${base}${subdir}/"
+
+  if [[ $? -ne 0 ]]; then
+    echo "Warning: wget failed for ${subdir}" >&2
+  fi
+done < "$subdirs_file"
+```
 n=$(wc -l < mammals_PAR.txt)
 sbatch --array=1-"$n"%20 download_query_annotation_array.sh
 ```
@@ -67,12 +90,15 @@ wget -c -r -l 1 -np -nH --cut-dirs=4 \
   "${base}${subdir}/"
 ```
 
-# Rename unannotated genes in gff, or use
+# Get Mustela nivalis
 ```
 wget -c -r -l 1 -np -nH --cut-dirs=4 \
   --reject "index.html*" \
   --accept "query_annotation*" \
   "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Mustela_nivalis_vulgaris__Least_weasel__HLmusNivaVul3A__GCA_057128415.1/"
+
+# cd /data/Wilson_Lab/data/TOGA2_Hiller/Homo_sapiens_hg38
+# mv Mustela_nivalis_vulgaris__Least_weasel__HLmusNivaVul3A__GCA_057128415.1 Mustela_nivalis__Least_weasel__HLmusNivaVul3A__GCA_057128415.1
   
 ```
 # Get Molossus nigricans
@@ -89,14 +115,13 @@ wget -c -r -l 1 -np -nH --cut-dirs=4 \
 
 # Get genomes from round2 of HalfDeep
 
-cd /data/Wilson_Lab/data/TOGA2_Hiller/Homo_sapiens_hg38
-
 # Bos_taurus -- updated TOGA2 version just finished running
 wget -c -r -l 1 -np -nH --cut-dirs=4 \
   --reject "index.html*" \
   --accept "query_annotation*" \
   "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Bos_indicus_x_Bos_taurus__Hybrid_cattle__HLbosIndiX1__GCF_003369695.1/"
 
+mv Bos_indicus_x_Bos_taurus__Hybrid_cattle__HLbosIndiX1__GCF_003369695.1/ Bos_taurus__GCF_003369695.1
 
 # Lycaon_pictus
 wget -c -r -l 1 -np -nH --cut-dirs=4 \
@@ -110,6 +135,122 @@ wget -c -r -l 1 -np -nH --cut-dirs=4 \
   --accept "query_annotation*" \
   "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Panthera_onca__Jaguar__HLpanOnca3A__GCA_046562875.1/"
 
+## Get annotations for dual curated genomes
+
+### Microtus_pennsylvanicus
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Microtus_pennsylvanicus__Meadow_vole__HLmicPen1A__GCA_037038515.1/"
+
+### Thomomys_bottae
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Thomomys_bottae__Bottas_pocket_gopher__HLthoBot2A__GCA_031878675.1/"
+
+### Ochotona_princeps
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Ochotona_princeps__American_pika__HLochPri4__GCF_030435755.1/"
+
+### Myotis_mystacinus
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Myotis_mystacinus__Whiskered_bat__HLmyoMyst3A__GCA_964094495.3/"
+
+### Myotis_nattereri
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Myotis_nattereri__Natterers_bat__HLmyoNat1A__GCA_964212035.1/"
+
+### Nyctalus_leisleri
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Nyctalus_leisleri__Lesser_noctule__HLnycLeis2A__GCA_964264875.2/"
+
+### Artibeus_intermedius
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Artibeus_intermedius__common_fruit-eating_bat__HLartInt1A__GCA_038363145.1/"
+
+### Artibeus_literatus
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Artibeus_lituratus__Great_fruit-eating_bat__HLartLitu2A__GCA_038363095.4/"
+
+### Canis_lupus_baileyi
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Canis_lupus_baileyi__Mexican_gray_wolf__HLcanLupBai8A__GCF_048164855.1/"
+
+### Desmodus rotundus
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Desmodus_rotundus__common_vampire_bat__HLdesRot15A/"
+
+### Miniopterus_schreibersii
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Miniopterus_schreibersii__Schreibers_long-fingered_bat__HLminSchr3A__GCA_964146895.2/"
+
+### Dasypus_novemcinctus
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+	"https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/Dasypus_novemcinctus__Nine-banded_armadillo__HLdasNove5A__GCF_030445035.2/"
+
+### Corynorhinus_townsendii
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+	"https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/	Corynorhinus_townsendii__Townsends_big-eared_bat__HLcorTow1A__GCA_026230055.1/"
+
+### Remove directories of unused mammalian accessions 
+```
+cd /data/Wilson_Lab/data/TOGA2_Hiller/Integrated/mammals/Mammalia
+
+rm -r Balaenoptera_physalus__Fin_whale__HLbalPhy4__GCA_965194765.1
+rm -r Balaenoptera_physalus__Fin_whale__HLbalPhy3__GCA_023338255.1
+rm -r Balaenoptera_physalus__Fin_whale__HLbalPhy2
+rm -r Callithrix_jacchus__white-tufted-ear_marmoset__HLcalJac5__GCF_011100555.1
+rm -r Callithrix_jacchus__white-tufted-ear_marmoset__calJac4__GCF_009663435.1
+rm -r Camelus_dromedarius__Arabian_camel__HLcamDro2__GCA_000803125.3
+rm -r Camelus_dromedarius__Arabian_camel__HLcamDro3B__GCA_036321565.1
+rm -r Capra_hircus__goat__HLcapHir2__GCA_001704415.1
+rm -r Gorilla_gorilla_gorilla__western_lowland_gorilla__gorGor6__GCF_008122165.1
+rm -r Grampus_griseus__Rissos_dolphin__HLgraGri1
+rm -r Inia_geoffrensis__Boutu__HLiniGeo2B__GCA_036417475.1
+rm -r Loxodonta_africana__African_savanna_elephant__HLloxAfr5B__GCA_030020305.1
+rm -r Macaca_nemestrina__pig-tailed_macaque__macNem1__GCF_000956065.1
+rm -r Marmota_flaviventris__Yellow-bellied_marmot__HLmarFlav2B__GCA_047512175.1
+rm -r Marmota_flaviventris__yellow-bellied_marmot__HLmarFla1__GCA_003676075.2
+rm -r Mesoplodon_bidens__Sowerbys_beaked_whale__HLmesBid1__GCA_004027085.1
+rm -r Mesoplodon_bidens__Sowerbys_beaked_whale__HLmesBid2B__GCA_964148845.1
+rm -r Myotis_nattereri__Natterers_bat__HLmyoNatt2B__GCA_964212025.2
+rm -r Myotis_nattereri__Natterers_bat__HLmyoNat1B__GCA_964212025.1
+rm -r Myotis_nattereri__Natterers_bat__HLmyoNat1A__GCA_964212035.1
+rm -r Ovis_aries__sheep__HLoviAri6__GCF_016772045.2
+rm -r Ovis_canadensis__bighorn_sheep__HLoviCan2__GCA_004026945.1
+rm -r Pan_troglodytes__chimpanzee__panTro6__GCF_002880755.1
+rm -r Pongo_abelii__Sumatran_orangutan__ponAbe3__GCF_002880775.1
+rm -r Pongo_pygmaeus__Bornean_orangutan__HLponPyg1__GCA_023767775.1
+rm -r Pseudorca_crassidens__false_killer_whale__HLpseCra1
+rm -r Rhynchocyon_petersi__Black_and_rufous_elephant_shrew__HLrhyPet1B__GCA_043290065.1
+rm -r Rhynchonycteris_naso__Proboscis_bat__HLrhyNas2B__GCA_037038555.1
+rm -r Symphalangus_syndactylus__siamang__HLsymSyn3__GCF_028878055.1
+rm -r Trichechus_inunguis__Amazon_manatee__HLtriInu1B__GCA_046562985.1
+rm -r Urocitellus_parryii__Arctic_ground_squirrel__HLuroPar1__GCA_003426925.1
+rm -r Urocitellus_parryii__Arctic_ground_squirrel__HLuroPar2B__GCA_045843765.1
 
 
 ## Zebra finch reference
@@ -211,6 +352,47 @@ mv Pseudopipra_pipra__white-crowned_manakin__HLpsePip1A__GCF_036250125.1 Dixiphi
 
 mv Bos_indicus_x_Bos_taurus__Hybrid_cattle__HLbosIndiX1__GCF_003369695.1 Bos_taurus__Hybrid_cattle__HLbosIndiX1__GCF_003369695.1/
 ```
+
+### Poecile_atricapillus
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_zebrafinch_HLtaeGut5-GCF_003957565.2/Poecile_atricapillus__Black-capped_chickadee__HLpoeAtri2A__GCF_030490865.1/"
+
+### Amazona_ochrocephala
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_zebrafinch_HLtaeGut5-GCF_003957565.2/	Amazona_ochrocephala__Yellow-crowned_parrot__HLamaOchr1A__GCA_039720435.1/"
+
+### Anser_anser
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_zebrafinch_HLtaeGut5-GCF_003957565.2/	Anser_anser__Domestic_goose__HLansAnse1A__GCA_964211835.1/"
+
+### Eudromia_elegans
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_zebrafinch_HLtaeGut5-GCF_003957565.2/Eudromia_elegans__Elegant_crested-tinamou__HLeudEleg2A__GCA_047922985.1/"
+
+### Dromaius_novaehollandiae
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_zebrafinch_HLtaeGut5-GCF_003957565.2/Dromaius_novaehollandiae__Emu__HLdroNov3__GCF_036370855.1/"
+
+### Steatornis_caripensis
+wget -c -r -l 1 -np -nH --cut-dirs=4 \
+  --reject "index.html*" \
+  --accept "query_annotation*" \
+  "https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_zebrafinch_HLtaeGut5-GCF_003957565.2/Steatornis_caripensis__Oilbird__HLsteCari4A__GCA_054099775.1/"
+
+
+zcat query_annotation.gtf.gz |
+  awk '$3 == "gene" && /DYM/'
+
 ## Integrated reference
 ```
 mkdir -p /data/Wilson_Lab/data/TOGA2_Hiller/zebrafinch_HLtaeGut5-GCF_003957565.2/

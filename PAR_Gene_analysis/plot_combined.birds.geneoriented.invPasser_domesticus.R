@@ -15,7 +15,7 @@ INVERT_PAR_ORDER_SPECIES <- "Passer_domesticus"
 
 # How many ordinal positions to show on either side of GENE
 ORDINAL_MIN <- -30
-ORDINAL_MAX <- 30
+ORDINAL_MAX <- 35
 
 gene_file <- "birds_PAR_genes.all.tsv"
 
@@ -132,14 +132,14 @@ tree_filtered <- keep.tip(
 # Diagnostic tree with node numbers for choosing rotations
 # ============================================================
 
-tree_filtered <- ape::rotate(tree_filtered, node = 28)
-tree_filtered <- ape::rotate(tree_filtered, node = 29)
-tree_filtered <- ape::rotate(tree_filtered, node = 30)
-tree_filtered <- ape::rotate(tree_filtered, node = 31)
 tree_filtered <- ape::rotate(tree_filtered, node = 32)
 tree_filtered <- ape::rotate(tree_filtered, node = 33)
 tree_filtered <- ape::rotate(tree_filtered, node = 34)
 tree_filtered <- ape::rotate(tree_filtered, node = 35)
+tree_filtered <- ape::rotate(tree_filtered, node = 36)
+tree_filtered <- ape::rotate(tree_filtered, node = 37)
+tree_filtered <- ape::rotate(tree_filtered, node = 38)
+tree_filtered <- ape::rotate(tree_filtered, node = 39)
 
 
 

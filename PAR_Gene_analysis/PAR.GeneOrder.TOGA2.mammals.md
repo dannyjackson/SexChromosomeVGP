@@ -5,14 +5,7 @@ cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR
 
 TOGA_DIR="/data/Wilson_Lab/data/TOGA2_Hiller/Homo_sapiens_hg38"
 
-## Excluding:
-Microtus_pennsylvanicus,CHROM:0-116367
-Ochotona_princeps,CHROM:107724012-107801096 
-
-
-Panthera_onca,122788602-130762486
-Bos_taurus,240-6843483
-
+PAF_DIR="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID"
 
 # Confirm that accessions in sexchrfile still match correctly (genomes have been updated)
 SEXCHR_FILE="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/sexchrom_accessions.csv"
@@ -242,11 +235,43 @@ Rhynchonycteris_naso,CM073052:138579092-142670400
 Symphalangus_syndactylus,NC_072447:0-16738677
 Trichechus_inunguis,CM102173:0-9624845
 Urocitellus_parryii,CM099876:122998411-131433435
+Artibeus_intermedius,CM076326:149640977-151570710
+Artibeus_lituratus,CM076392:0-1226197
+Corynorhinus_townsendii,CM133721.1:0-1829836
+Miniopterus_schreibersii,NC_071400:103813303-106815783
+Desmodus_rotundus,h1_SUPER_X:98077179-101544622
+Canis_lupus_baileyi,NC_132876:118611595-125236116
+Nyctalus_leisleri,OZ183628:0-1665649
+Dasypus_novemcinctus,NC_080704:0-9679476
+Ochotona_princeps,NC_080865:0-94380
 EOF
+
+# analyze separately -- rodents
+cat > PAR.species_chr_region.rodents.txt <<'EOF'
+Microtus_pennsylvanicus,CM073189:0-219583
+Ochotona_princeps,NC_080865:0-94380
+EOF
+
+# Removed -- no PAR
+Nyctalus_leisleri,OZ183628.2:117626146-117723036
+Myotis_mystacinus,OZ075425:127971684-127971689  # made up regions for plotting...
+Thomomys_bottae,CM063048:0-5
+Ochotona_princeps,NC_080865:0-94380
+
+Alt: Ochotona_princeps	107724012-END
+
+# Should we remove: PAR not well assembled?
+Artibeus lituratus
+
+# Compute proportion of inferred PAR actually covered by alignments:
+Rscript PAR_proportion_aligned.mammals.R
+
 
 chmod +x find_par_genes_toga.awk 
 ./find_par_genes_toga.awk PAR.species_chr_region.txt > mammals_PAR_genes.tsv
 
+
+awk -F',' '{print $1}' PAR.species_chr_region.txt > species.txt
 
 cat > species.txt <<'EOF'
 Lycaon_pictus
@@ -282,6 +307,12 @@ Pongo_pygmaeus
 Symphalangus_syndactylus
 Gorilla_gorilla
 Pongo_abelii
+Microtus_pennsylvanicus
+Thomomys_bottae
+Ochotona_princeps
+Myotis_mystacinus
+Myotis_nattereri
+Nyctalus_leisleri
 EOF
 
 while read -r species; do
@@ -290,8 +321,7 @@ while read -r species; do
 done < species.txt
 
 # Redo the one(s) that didn't work due to naming issues
-# cd /data/Wilson_Lab/data/TOGA2_Hiller/Homo_sapiens_hg38
-# mv Mustela_nivalis_vulgaris__Least_weasel__HLmusNivaVul3A__GCA_057128415.1 Mustela_nivalis__Least_weasel__HLmusNivaVul3A__GCA_057128415.1
+
 
 grep Mustela_nivalis PAR.species_chr_region.txt | sed 's/_vulgaris//g' > PAR.species_chr_region.redo.txt
 ./find_par_genes_toga.awk PAR.species_chr_region.redo.txt > mammals_PAR_genes.redo.tsv
@@ -315,6 +345,12 @@ done < species.chrX.txt
 
 chmod +x find_par_genes_toga.chrX.awk
 ./find_par_genes_toga.chrX.awk PAR.species_chr_region.chrX.txt > mammals_PAR_genes.chrX.tsv
+
+# Add Desmodus rotundus
+chmod +x find_par_genes.toga.SuperX.awk
+grep Desmodus_rotundus PAR.species_chr_region.txt > PAR.species_chr_region.SuperX.txt
+
+./find_par_genes.toga.SuperX.awk PAR.species_chr_region.SuperX.txt > mammals_PAR_genes.SuperX.tsv
 
 # Add human
 gff="/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Homo_sapiens/ncbi_dataset/data/GCF_009914755.1/genomic.gff"
@@ -393,20 +429,24 @@ $1 == par_chrom && $3 == "gene" {
 ' "$gff" > "$out"
 
 
-grep -v 'Myotis' mammals_PAR_genes.tsv > mammals_PAR_genes.tmp
-grep 'GCA_964212035.2' mammals_PAR_genes.tsv >> mammals_PAR_genes.tmp
-mv mammals_PAR_genes.tmp mammals_PAR_genes.tsv
-
 sort -u mammals_PAR_genes.chrX.tsv > mammals_PAR_genes.chrX.tsv.tmp
 mv mammals_PAR_genes.chrX.tsv.tmp mammals_PAR_genes.chrX.tsv
 
-cat mammals_PAR_genes.tsv > mammals_PAR_genes.all.tsv 
+cat mammals_PAR_genes.tsv | grep -v Desmodus > mammals_PAR_genes.all.tsv 
 tail -n +2 mammals_PAR_genes.redo.tsv >> mammals_PAR_genes.all.tsv 
 tail -n +2 mammals_PAR_genes.chrX.tsv >> mammals_PAR_genes.all.tsv 
 tail -n +2 Human_PAR_genes.tsv >> mammals_PAR_genes.all.tsv 
-
+tail -n +2 mammals_PAR_genes.SuperX.tsv >> mammals_PAR_genes.all.tsv 
 sed -i 's/Mustela_nivalis/Mustela_nivalis_vulgaris/g' mammals_PAR_genes.all.tsv 
 
+
+# check that all species ran
+while read -r species; do
+  echo $species
+  grep $species mammals_PAR_genes.all.tsv | wc -l
+done < species.txt
+
+# nothing for either Corynorhinus_townsendii nor Miniopterus_schreibersii
 ```
 # Plot
 ```

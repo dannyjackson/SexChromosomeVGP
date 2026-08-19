@@ -59,6 +59,62 @@ head -n 1 /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/dataf
 cat /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_985thr/PAR_annotations/Mustela_nivalis_vulgaris_YtoX.aln.id98_5.len10k.refqry.bed >> \
 /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Mustela_nivalis_vulgaris_YtoX.aln.refqry.csv
 
+# Process Dasypus 
+
+paf="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_03AUG2026/filtered_98.5_10kb_Dasypus_novemcinctus_GCA_030445035.2_hap1_Y_to_GCA_030445035.2_hap1_X.aln.paf"
+
+out="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/filtered_98.5_10kb_Dasypus_novemcinctus_GCA_030445035.2_hap1_Y_to_GCA_030445035.2_hap1_X.len10k.refqry.bed"
+
+awk 'BEGIN{
+  OFS="\t"
+  print "chrom_qry","len_qry","bp_start_qry","bp_end_qry","percent_identity_qry","chrom_ref","len_ref","bp_start_ref","bp_end_ref","percent_identity_ref"
+}
+{
+  pid = ($11 > 0 ? 100 * $10 / $11 : 0)
+
+  print $1, $2, $3, $4, sprintf("%.4f", pid), $6, $7, $8, $9, sprintf("%.4f", pid)
+}' "$paf" > "$out"
+
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Dasypus_novemcinctus_YtoX.aln.refqry.csv
+
+# Process Corynorhinus 
+
+paf="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_03AUG2026/Corynorhinus_townsendii_GCA_026230055.2_hap1_Y_to_GCA_026230055.2_hap1_X.aln.paf"
+
+out="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/Corynorhinus_townsendii_GCA_026230055.2_hap1_Y_to_GCA_026230055.2_hap1_X.refqry.bed"
+
+awk 'BEGIN{
+  OFS="\t"
+  print "chrom_qry","len_qry","bp_start_qry","bp_end_qry","percent_identity_qry","chrom_ref","len_ref","bp_start_ref","bp_end_ref","percent_identity_ref"
+}
+{
+  pid = ($11 > 0 ? 100 * $10 / $11 : 0)
+
+  print $1, $2, $3, $4, sprintf("%.4f", pid), $6, $7, $8, $9, sprintf("%.4f", pid)
+}' "$paf" > "$out"
+
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Corynorhinus_townsendii_YtoX.aln.refqry.csv
+
+# Process Lyacon
+
+paf="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_03AUG2026/	Lycaon_pictus_YtoX.aln.paf"
+
+out="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/	Lycaon_pictus_YtoX.aln.bed"
+
+awk 'BEGIN{
+  OFS="\t"
+  print "chrom_qry","len_qry","bp_start_qry","bp_end_qry","percent_identity_qry","chrom_ref","len_ref","bp_start_ref","bp_end_ref","percent_identity_ref"
+}
+{
+  pid = ($11 > 0 ? 100 * $10 / $11 : 0)
+
+  print $1, $2, $3, $4, sprintf("%.4f", pid), $6, $7, $8, $9, sprintf("%.4f", pid)
+}' "$paf" > "$out"
+
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Lycaon_pictus_YtoX.aln.refqry.csv
 
 # Plot with R script
 

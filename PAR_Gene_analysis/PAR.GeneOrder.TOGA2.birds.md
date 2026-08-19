@@ -25,41 +25,6 @@ grep 'Opisthocomus_hoazin' $SEXCHR_FILE
 
 # Excluding this species, which had no surviving regions after filtering for PID and length: Rhynochetos_jubatus
 
-## Prior PAR boundaries
-
-cat > PAR.species_chr_region.gaps.txt <<'EOF'
-Aegotheles_albertisi,CM078494.1:0-3571166
-Anas_platyrhynchos,OZ076978.1:0-1777881
-Aythya_ferina,OZ124217.1:0-1863434
-Aythya_marila,OZ223658.1:0-2273918
-Calonectris_borealis,NC_134352.1:77280424-87715099
-Colius_striatus,NC_084790.1:0-1337305
-Coloeus_monedula,OZ238506.1:84644553-85378027
-Columba_livia,NC_088642.1:0-1995161
-Cyanocitta_cristata,CM100569.1:0-807097
-Cygnus_columbianus,OZ223797.1:0-2524550
-Dixiphia_pipra,NC_087581.1:0-503193
-Falco_naumanni,NC_054080.1:0-813326
-Heliangelus_exortis,NC_092454.1:0-854851
-Larus_argentatus,OZ207420.1:0-4531783
-Lathamus_discolor,NC_088909.1:111967751-112479095
-Mergus_octosetaceus,CM072318.1:0-2607306
-Morphnus_guianensis,CM098430.1:93319090-102737265
-Numenius_arquata,NC_133616.1:0-3300171
-Opisthocomus_hoazin,NC_134454.1:88690378-91338688
-Passer_domesticus,NC_087512.1:0-667073
-Patagioenas_fasciata,NC_092560.1:83825531-85896199
-Platalea_leucorodia,OZ238966.1:0-3253226
-Poecile_atricapillus,NC_081289.1:121777972-146584261
-Phaethon_aethereus,OZ196914.1:0-10085609
-Rissa_tridactyla,NC_071497.1:83212817-88208671
-Sarcoramphus_papa,CM075626.1:87011595-96420541
-Strix_aluco,NC_133971.1:94105843-97043613
-Struthio_camelus_australis,NC_090982.1:35190081-89934196
-Taeniopygia_guttata,NC_133063.1:0-2824462
-Zosterops_lateralis,OZ246513.1:0-517530
-EOF
-
 
 # chmod +x find_PAR_gaps.sh 
 # ./find_PAR_gaps.sh
@@ -182,43 +147,14 @@ Strix_aluco # swap to CM062916.1 from NC_133971.1
 ```
 
 # Excluding Poecile_atricapillus: no clear PAR boundary, 2MB gap between first and second contiguous aligned seq
-# Excluding Colius_striatus,NC_084790:0-1458428: inferred PAR is neo-sex
+# Poecile_atricapillus,NC_081289:143407603-143776142
+# Excluding Colius_striatus,NC_084790:0-1458428: inferred PAR is neo-sex. Likely PAR loss but no short read data to confirm it
 # Excluding Falco_naumanni,NC_054080:0-813326: Can't confirm PAR side... dig more into later
 
-## Prior PAR boundaries
+## PAR boundaries with 98.5 PID and 10kb limits
 cat > PAR.species_chr_region.txt <<'EOF'
-Aegotheles_albertisi,CM078494.1:0-3571166
-Anas_platyrhynchos,OZ076978.1:0-1777881
-Aythya_ferina,OZ124217.1:0-1863434
-Aythya_marila,OZ223658.1:0-2273918
-Calonectris_borealis,OZ122106.1:77280424-87715099
-Coloeus_monedula,OZ238506.1:84644553-85378027
-Columba_livia,NC_088642.1:0-1995161
-Cyanocitta_cristata,CM100569.1:0-807097
-Cygnus_columbianus,OZ223797.1:0-2524550
-Dixiphia_pipra,NC_087581.1:0-503193
-Heliangelus_exortis,NC_092454.1:0-854851
-Larus_argentatus,OZ207420.1:0-4531783
-Lathamus_discolor,NC_088909.1:111967751-112479095
-Mergus_octosetaceus,CM072318.1:0-2607306
-Morphnus_guianensis,CM098430.1:93319090-102737265
-Numenius_arquata,OZ067243.1:0-3300171
-Opisthocomus_hoazin,CM061422.1:88690378-91338688
-Passer_domesticus,NC_087512.1:0-667073
-Patagioenas_fasciata,NC_092560.1:83825531-85896199
-Platalea_leucorodia,OZ238966.1:0-3253226
-Phaethon_aethereus,OZ196914.1:0-10085609
-Rissa_tridactyla,NC_071497.1:83212817-88208671
-Sarcoramphus_papa,CM075626.1:87011595-96420541
-Strix_aluco,CM062916.1:94105843-97043613
-Struthio_camelus,NC_090982.1:35190081-89934196
-Taeniopygia_guttata,NC_133063.1:0-2824462
-Zosterops_lateralis,OZ246513.1:0-517530
-EOF
-
-
-## Updated PAR boundaries 98.5 and 10kb limits
-cat > PAR.species_chr_region.txt <<'EOF'
+Colius_striatus,NC_084790:89023853-89023854
+Falco_naumanni,NC_054080:86597977-86597978
 Aegotheles_albertisi,CM078494:0-3649586
 Anas_platyrhynchos,OZ076978:0-2234151
 Aythya_ferina,OZ124217:0-2205586
@@ -246,9 +182,16 @@ Strix_aluco,CM062916:94105843-97043613
 Struthio_camelus,NC_090982.1:35190081-89934196
 Taeniopygia_guttata,NC_133063:0-2927931
 Zosterops_lateralis,OZ246513:0-517530
+Poecile_atricapillus,NC_081289:0-1
+Amazona_ochrocephala,CM077909:119902688-120227954
+Anser_anser,OZ124259:85856365-88459368
+Eudromia_elegans,CM106466:0-15658108
+Dromaius_novaehollandiae,NC_088132:29141736-85985397
 EOF
 
 cat > PAR.species_chr_region.gaps.txt <<'EOF'
+Colius_striatus,NC_084790.1:89023853-89023854
+Falco_naumanni,NC_054080.1:86597977-86597978
 Aegotheles_albertisi,CM078494.1:0-3649586
 Anas_platyrhynchos,OZ076978.1:0-2234151
 Aythya_ferina,OZ124217.1:0-2205586
@@ -276,6 +219,11 @@ Strix_aluco,CM062916.1:94105843-97043613
 Struthio_camelus,NC_090982.1:35190081-89934196
 Taeniopygia_guttata,NC_133063.1:0-2927931
 Zosterops_lateralis,OZ246513.1:0-517530
+Poecile_atricapillus,NC_081289.1:0-1
+Amazona_ochrocephala,CM077909.1:119902688-120227954
+Anser_anser,OZ124259.1:85856365-88459368
+Eudromia_elegans,CM106466.1:0-15658108
+Dromaius_novaehollandiae,NC_088132.1:29141736-85985397
 EOF
 
 export TOGA_DIR="/data/Wilson_Lab/data/TOGA2_Hiller/zebrafinch_HLtaeGut5-GCF_003957565.2" 
@@ -285,8 +233,12 @@ chmod +x find_par_genes_toga.birds.awk
 
 
 cat > species.txt <<'EOF'
+Colius_striatus
+Falco_naumanni
 Aegotheles_albertisi
+Amazona_ochrocephala
 Anas_platyrhynchos
+Anser_anser
 Aythya_ferina
 Aythya_marila
 Calonectris_borealis
@@ -295,7 +247,8 @@ Columba_livia
 Cyanocitta_cristata
 Cygnus_columbianus
 Dixiphia_pipra
-Falco_naumanni
+Dromaius_novaehollandiae
+Eudromia_elegans
 Heliangelus_exortis
 Larus_argentatus
 Lathamus_discolor
@@ -307,20 +260,19 @@ Passer_domesticus
 Patagioenas_fasciata
 Phaethon_aethereus
 Platalea_leucorodia
+Poecile_atricapillus
 Rissa_tridactyla
 Sarcoramphus_papa
 Strix_aluco
 Struthio_camelus
 Taeniopygia_guttata
+Zosterops_lateralis
 EOF
 
 while read -r species; do
   echo $species
   grep $species birds_PAR_genes.tsv | wc -l
 done < species.txt
-
-
-## Anas_platyrhynchos -- TOGA2 has different assembly
 
 
 cp birds_PAR_genes.tsv birds_PAR_genes.all.tsv 
@@ -334,6 +286,8 @@ sed -i 's/Struthio_camelus/Struthio_camelus_australis/g' birds_PAR_genes.all.tsv
 telomere_file="species.telomeres.txt"
 
 cat > "$telomere_file" <<'EOF'
+Colius_striatus,R,YES
+Falco_naumanni,R,YES
 Aegotheles_albertisi,L,NO
 Anas_platyrhynchos,L,YES
 Aythya_ferina,L,YES
@@ -351,7 +305,7 @@ Mergus_octosetaceus,L,YES
 Morphnus_guianensis,R,NO
 Numenius_arquata,L,NO
 Opisthocomus_hoazin,R,NO
-Passer_domesticus,L,NO
+Passer_domesticus,L,YES
 Patagioenas_fasciata,R,YES
 Phaethon_aethereus,L,NO
 Platalea_leucorodia,L,NO
@@ -361,15 +315,12 @@ Strix_aluco,R,NO
 Struthio_camelus_australis,R,YES
 Taeniopygia_guttata,L,YES
 Zosterops_lateralis,R,NO
+Poecile_atricapillus,R,YES
+Amazona_ochrocephala,R,NO
+Anser_anser,R,YES
+Eudromia_elegans,L,YES
+Dromaius_novaehollandiae,R,NO
 EOF
-
-# Clean data to standardize genes named for X and Y locations in human
-## sed -i 's/NLGN4Y/NLGN4/g' mammals_PAR_genes.all.tsv
-
-Rscript plot_combined.allgenelabels.birds.R
-
-Rscript plot_combined.birds.R
-
 
 
 # Modify the file to combine major blocks of gene family expansions into a single point
@@ -442,24 +393,19 @@ END {
 }' > birds_PAR_genes.all.LOC_arrays.tsv
 
 
-Rscript plot_combined.birds.arrays.R
 
 ```
 ```
 # set a specific gene as the origin
-
+```
 cp birds_PAR_genes.all.tsv birds_PAR_genes.all.tsv.save
 
 grep -v 'LOC' birds_PAR_genes.all.tsv | grep -v 'LINC' > birds_PAR_genes.all.tsv.noLOC
 mv birds_PAR_genes.all.tsv.noLOC birds_PAR_genes.all.tsv
 
+Rscript PAR_GeneOrder_Birds.August2026.R
 
-Rscript plot_combined.birds.geneoriented.R 
-
-Rscript plot_combined.birds.geneoriented.invPasser_domesticus.R 
-
-
-
+```
 # compute gene freq
 ```
 library(dplyr)
@@ -474,4 +420,6 @@ gene_species_counts <- birds %>%
   arrange(desc(NumSpeciesInPAR), GeneName)
 
 write_tsv(gene_species_counts, "genes_num_species_in_PAR.tsv")
+```
+# Test for phylogenetic-corrected linear relationship of PAR base pair count and gene count
 ```
