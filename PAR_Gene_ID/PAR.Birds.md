@@ -34,6 +34,65 @@ cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafil
 cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Molossus_nigricans_YtoX.aln.refqry.csv
 
 
+# Process Artibeus literatus
+## Y1 to X
+paf="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/	Artibeus_lituratus_GCA_038363095.4_YtoX.aln.paf"
+
+out="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/	Artibeus_lituratus_GCA_038363095.4_YtoX..aln.id98_5.len10k.refqry.bed"
+
+awk 'BEGIN{
+  OFS="\t"
+  print "chrom_qry","len_qry","bp_start_qry","bp_end_qry","percent_identity_qry","chrom_ref","len_ref","bp_start_ref","bp_end_ref","percent_identity_ref"
+}
+{
+  pid = ($11 > 0 ? 100 * $10 / $11 : 0)
+
+  print $1, $2, $3, $4, sprintf("%.4f", pid), $6, $7, $8, $9, sprintf("%.4f", pid)
+}' "$paf" > "$out"
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_985thr/PAR_annotations/Artibeus_lituratus_GCA_038363095.4_YtoX.aln.id98_5.len10k.refqry.bed 
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Artibeus_lituratus_GCA_038363095.4_YtoX.aln.refqry.csv
+
+## Y2 to X
+paf="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/	Artibeus_lituratus_GCA_038363095.4_Y2toX.aln.paf"
+
+out="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/	Artibeus_lituratus_GCA_038363095.4_Y2toX..aln.id98_5.len10k.refqry.bed"
+
+awk 'BEGIN{
+  OFS="\t"
+  print "chrom_qry","len_qry","bp_start_qry","bp_end_qry","percent_identity_qry","chrom_ref","len_ref","bp_start_ref","bp_end_ref","percent_identity_ref"
+}
+{
+  pid = ($11 > 0 ? 100 * $10 / $11 : 0)
+
+  print $1, $2, $3, $4, sprintf("%.4f", pid), $6, $7, $8, $9, sprintf("%.4f", pid)
+}' "$paf" > "$out"
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_985thr/PAR_annotations/Artibeus_lituratus_GCA_038363095.4_Y2toX.aln.id98_5.len10k.refqry.bed 
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Artibeus_lituratus_GCA_038363095.4_Y2toX.aln.refqry.csv
+
+
+# Process Myotis mysticanus
+paf="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/		Myotis_mystacinus_GCA_964094495.3_hap1_Y_to_GCA_964094495.3_hap1_X.aln.paf"
+
+out="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/		Myotis_mystacinus_GCA_964094495.3_hap1_Y_to_GCA_964094495.3_hap1_X.aln.id98_5.len10k.refqry.bed"
+
+awk 'BEGIN{
+  OFS="\t"
+  print "chrom_qry","len_qry","bp_start_qry","bp_end_qry","percent_identity_qry","chrom_ref","len_ref","bp_start_ref","bp_end_ref","percent_identity_ref"
+}
+{
+  pid = ($11 > 0 ? 100 * $10 / $11 : 0)
+
+  print $1, $2, $3, $4, sprintf("%.4f", pid), $6, $7, $8, $9, sprintf("%.4f", pid)
+}' "$paf" > "$out"
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/align_PAR_985thr/PAR_annotations/Myotis_mystacinus_GCA_964094495.3_hap1_Y_to_GCA_964094495.3_hap1_X.aln.id98_5.len10k.refqry.bed 
+
+cp $out /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/continuous_percentID/Myotis_mystacinus_GCA_964094495.3_hap1_Y_to_GCA_964094495.3_hap1_X.aln.refqry.csv
+
 # Process Mustela
 paf="/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/PAFs_22JUNE2026/filtered_98.5_10kb_Mustela_nivalis_vulgaris_GCA_057128415.1_hap1_GCA_057128425.1_hap2_YtoX.aln.paf"
 

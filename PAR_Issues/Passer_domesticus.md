@@ -1668,3 +1668,696 @@ ggsave(
   dpi = 300
 )
 ```
+
+# Take 2
+### Make plot of differences in heterozygosity between males and females
+```
+# ============================================================
+# Female:Male heterozygosity ratio across Z chromosome
+# Window-specific t-tests + BH FDR correction
+# ============================================================
+
+
+# ------------------------------------------------------------
+# Packages
+# ------------------------------------------------------------
+
+library(readr)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(patchwork)
+
+
+# ------------------------------------------------------------
+# Input files
+# ------------------------------------------------------------
+
+OUT <- "heterozygosity/NC_087512.1"
+
+het_file <- paste0(OUT, ".hets_50kb.tsv")
+
+sex_file <- "heterozygosity/NC_087512.1.with_HO.tsv_sex.txt"
+
+
+# ------------------------------------------------------------
+# Read windowed heterozygosity
+# ------------------------------------------------------------
+
+hets <- read_tsv(
+  het_file,
+  show_col_types = FALSE
+)
+
+
+# Inspect
+print(head(hets))
+print(names(hets))
+
+
+# ------------------------------------------------------------
+# Species assignment
+# ------------------------------------------------------------
+
+hets <- hets %>%
+  mutate(
+    species = substr(INDV, 1, 4)
+  )
+
+
+# ------------------------------------------------------------
+# Read sex assignments
+# ------------------------------------------------------------
+
+sex <- read_tsv(
+  sex_file,
+  show_col_types = FALSE
+)
+
+
+# Keep only ID and sex columns.
+# Assumes sex file contains columns named INDV and Sex.
+
+sex <- sex %>%
+  select(INDV, Sex) %>%
+  rename(sex = Sex)
+
+
+# Clean sex labels
+sex <- sex %>%
+  mutate(
+    sex = str_squish(sex),
+    sex = factor(
+      sex,
+      levels = c("Female", "Male")
+    )
+  )
+
+
+# ------------------------------------------------------------
+# Join sex assignments onto heterozygosity data
+# ------------------------------------------------------------
+
+hets_sex <- hets %>%
+  left_join(
+    sex,
+    by = "INDV"
+  )
+
+
+# Check sex assignments
+print(table(hets_sex$sex, useNA = "ifany"))
+
+
+# ------------------------------------------------------------
+# Optional filtering
+#
+# Remove windows with very little genotype information.
+#
+# Since these are 200-kb windows, adjust this threshold
+# depending on the SNP density in your data.
+# ------------------------------------------------------------
+
+min_sites <- 5
+
+hets_sex <- hets_sex %>%
+  filter(
+    N_SITES >= min_sites,
+    sex %in% c("Female", "Male")
+  )
+
+
+
+# ============================================================
+# Female : Male heterozygosity ratio
+# ============================================================
+
+
+# ------------------------------------------------------------
+# Calculate mean female and male H_O per window
+#
+# Also perform a two-sample t-test within each window.
+#
+# This follows the same approach as the uploaded chr29 script.
+# ------------------------------------------------------------
+
+hets_ratio <- hets_sex %>%
+  group_by(
+    CHROM,
+    BIN_START,
+    BIN_END,
+    BIN_MID
+  ) %>%
+  summarise(
+
+    # Number of individuals contributing
+    n_female = sum(
+      sex == "Female" & !is.na(H_O)
+    ),
+
+    n_male = sum(
+      sex == "Male" & !is.na(H_O)
+    ),
+
+    # Mean heterozygosity by sex
+    mean_female = mean(
+      H_O[sex == "Female"],
+      na.rm = TRUE
+    ),
+
+    mean_male = mean(
+      H_O[sex == "Male"],
+      na.rm = TRUE
+    ),
+
+    # Female : Male heterozygosity ratio
+    ratio = mean_female / mean_male,
+
+    # Window-specific female vs male t-test
+    pval = tryCatch(
+
+      t.test(
+        H_O[sex == "Female"],
+        H_O[sex == "Male"],
+        alternative = "greater"
+      )$p.value,
+
+      error = function(e) NA_real_
+    ),
+
+    .groups = "drop"
+  )
+
+
+# ------------------------------------------------------------
+# Multiple-testing correction
+#
+# Benjamini-Hochberg FDR correction across windows.
+# ------------------------------------------------------------
+
+hets_ratio <- hets_ratio %>%
+  mutate(
+
+    padj = p.adjust(
+      pval,
+      method = "BH"
+    ),
+
+    sig_flag = case_when(
+      !is.na(padj) ~ padj < 0.001,
+      TRUE ~ FALSE
+    ),
+
+    sig_label = if_else(
+      sig_flag,
+      "Significant",
+      "Not significant"
+    )
+  )
+
+
+# Inspect results
+print(head(hets_ratio))
+
+print(
+  hets_ratio %>%
+    select(
+      CHROM,
+      BIN_START,
+      BIN_END,
+      mean_female,
+      mean_male,
+      ratio,
+      pval,
+      padj,
+      sig_flag
+    )
+)
+
+
+# ------------------------------------------------------------
+# Save statistics
+# ------------------------------------------------------------
+
+write_tsv(
+  hets_ratio,
+  paste0(
+    OUT,
+    ".hets_200kb.FM_ratio.tsv"
+  )
+)
+
+
+
+# ============================================================
+# Read W:Z PAF
+# ============================================================
+#
+# PAF columns:
+#
+# 1  query name
+# 2  query length
+# 3  query start
+# 4  query end
+# 5  strand
+# 6  target name
+# 7  target length
+# 8  target start
+# 9  target end
+# 10 number matching bases
+# 11 alignment block length
+# 12 MAPQ
+#
+# NC_087512.1 is the chromosome used for our x coordinate,
+# so we use query_start / query_end.
+# ============================================================
+
+paf_file <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/datafiles/minimap2/Passer_domesticus_WtoZ.aln.paf"
+
+CHR <- "NC_087512.1"
+xmin <- 0
+xmax <- 3000000
+
+paf <- read_tsv(
+  paf_file,
+  col_names = FALSE,
+  show_col_types = FALSE,
+  progress = FALSE
+)
+
+
+# We only need the first 12 standard PAF columns
+paf <- paf %>%
+  select(1:12)
+
+colnames(paf) <- c(
+  "query",
+  "query_length",
+  "query_start",
+  "query_end",
+  "strand",
+  "target",
+  "target_length",
+  "target_start",
+  "target_end",
+  "n_match",
+  "aln_length",
+  "mapq"
+)
+
+
+# ============================================================
+# Calculate percent sequence identity
+# ============================================================
+
+paf_z <- paf %>%
+  filter(
+    query == CHR,
+    aln_length > 0
+  ) %>%
+  mutate(
+
+    pct_identity =
+      100 * n_match / aln_length,
+
+    aln_size =
+      query_end - query_start
+  )
+
+
+# Check identity distribution
+summary(paf_z$pct_identity)
+
+quantile(
+  paf_z$pct_identity,
+  probs = c(
+    0,
+    0.01,
+    0.05,
+    0.25,
+    0.5,
+    0.75,
+    0.95,
+    0.99,
+    1
+  ),
+  na.rm = TRUE
+)
+
+
+# ============================================================
+# Identity bins
+# ============================================================
+#
+# IMPORTANT:
+#
+# Replace these breaks and colors with the EXACT breaks/colors
+# from your SV-by-eye plot.
+#
+# These values are placeholders until that SV plotting code
+# is supplied.
+# ============================================================
+
+id_breaks <- c(
+  -Inf,
+  90,
+  95,
+  97,
+  98.5,
+  100
+)
+
+id_labels <- c(
+  "<90%",
+  "90-95%",
+  "95-97%",
+  "97-98.5%",
+  "98.5-100%"
+)
+
+
+paf_z <- paf_z %>%
+  mutate(
+    identity_bin = cut(
+      pct_identity,
+      breaks = id_breaks,
+      labels = id_labels,
+      right = FALSE
+    )
+  )
+
+
+# ------------------------------------------------------------
+# SV-by-eye colors
+# ------------------------------------------------------------
+
+identity_colors <- c(
+  "<90%"    = "#aacbd7",
+  "90-95%"  = "#ece5b1",
+  "95-97%"  = "#ece5b1",
+  "97-98.5%"  = "#edc699",
+  "98.5-100%" = "#ee9b90"
+)
+
+
+# ============================================================
+# W:Z sequence identity track
+# ============================================================
+
+p_identity <- ggplot(
+  paf_z
+) +
+
+  geom_rect(
+    aes(
+      xmin = query_start,
+      xmax = query_end,
+      ymin = 0,
+      ymax = 1,
+      fill = identity_bin
+    ),
+    color = NA
+  ) +
+
+  scale_fill_manual(
+    values = identity_colors,
+    drop = FALSE
+  ) +
+
+  scale_x_continuous(
+    limits = c(0, xmax),
+    expand = c(0, 0),
+    labels = scales::label_number(
+      scale = 1e-6,
+      suffix = " Mb"
+    )
+  ) +
+
+  scale_y_continuous(
+    limits = c(0, 1),
+    expand = c(0, 0)
+  ) +
+
+  labs(
+    x = "Position on Z",
+    y = "Z:W\nidentity",
+    fill = "% identity"
+  ) +
+
+  annotate(
+    "rect",
+    xmin = 0,
+    xmax = 667073,
+    ymin = 0.1,
+    ymax = 0.9,
+    fill = NA,
+    color = "#8a66ac",
+    linewidth = 1
+  ) +
+
+  theme_bw(
+    base_size = 15
+  ) +
+
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid = element_blank(),
+
+    legend.position = "right",
+
+    plot.margin = margin(
+      t = 0,
+      r = 5.5,
+      b = 5.5,
+      l = 5.5
+    )
+  )
+
+# ============================================================
+# Three-track plot:
+#
+# 1. Windowed heterozygosity by sex
+# 2. Female vs male significance
+# 3. W:Z PAF percent identity
+# ============================================================
+
+library(patchwork)
+
+xmin <- 0
+xmax <- 3000000
+
+
+# ------------------------------------------------------------
+# Restrict heterozygosity data to plotting region
+# ------------------------------------------------------------
+
+hets_plot <- hets_sex %>%
+  filter(
+    BIN_START < xmax,
+    BIN_END > xmin
+  )
+
+
+# ============================================================
+# 1. Windowed heterozygosity by sex
+# ============================================================
+
+p_het <- ggplot(
+  hets_plot,
+  aes(
+    x = BIN_MID,
+    y = H_O,
+    color = sex,
+    group = INDV
+  )
+) +
+
+  geom_line(
+    linewidth = 0.35,
+    alpha = 0.75
+  ) +
+
+  scale_color_manual(
+    values = c(
+      Female = "#E26D5A",
+      Male   = "#4F7CAC"
+    )
+  ) +
+
+  scale_x_continuous(
+    limits = c(xmin, xmax),
+    expand = c(0, 0),
+    labels = scales::label_number(
+      scale = 1e-6,
+      suffix = " Mb"
+    )
+  ) +
+
+  labs(
+    x = NULL,
+    y = "Heterozygosity",
+    color = "Sex"
+  ) +
+
+  theme_bw(
+    base_size = 15
+  ) +
+
+  theme(
+    panel.grid.minor = element_blank(),
+
+    # x axis is shown only on bottom PAF panel
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+
+    legend.position = "right",
+
+    plot.margin = margin(
+      t = 5.5,
+      r = 5.5,
+      b = 0,
+      l = 5.5
+    )
+  )
+
+
+# ============================================================
+# 2. Significant female vs male heterozygosity difference
+# ============================================================
+
+sig_plot <- hets_ratio %>%
+  filter(
+    BIN_START < xmax,
+    BIN_END > xmin
+  )
+
+
+p_sig <- ggplot(
+  sig_plot
+) +
+
+  geom_rect(
+    aes(
+      xmin = pmax(BIN_START, xmin),
+      xmax = pmin(BIN_END, xmax),
+      ymin = 0,
+      ymax = 1,
+      fill = sig_flag
+    ),
+    color = NA
+  ) +
+
+  scale_fill_manual(
+    values = c(
+      `FALSE` = "grey70",
+      `TRUE`  = "black"
+    ),
+    breaks = c(FALSE, TRUE),
+    labels = c(
+      "Not significant",
+      "Significant"
+    )
+  ) +
+
+  scale_x_continuous(
+    limits = c(xmin, xmax),
+    expand = c(0, 0)
+  ) +
+
+  scale_y_continuous(
+    limits = c(0, 1),
+    expand = c(0, 0)
+  ) +
+
+  labs(
+    x = NULL,
+    y = "F vs M",
+    fill = "F vs M heterozygosity"
+  ) +
+
+  theme_bw(
+    base_size = 15
+  ) +
+
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+
+    panel.grid = element_blank(),
+
+    legend.position = "right",
+
+    plot.margin = margin(
+      t = 0,
+      r = 5.5,
+      b = 0,
+      l = 5.5
+    )
+  )
+
+
+# ============================================================
+# 3. W:Z percent identity
+#
+# Uses p_identity already constructed above
+# ============================================================
+
+p_identity <- p_identity +
+
+  scale_x_continuous(
+    limits = c(xmin, xmax),
+    expand = c(0, 0),
+    labels = scales::label_number(
+      scale = 1e-6,
+      suffix = " Mb"
+    )
+  ) +
+
+  labs(
+    x = "Position on Z",
+    y = "Z:W\nidentity",
+    fill = "% identity"
+  )
+
+
+# ============================================================
+# Combine three tracks
+# ============================================================
+
+combined <- p_het / p_sig / p_identity +
+
+  plot_layout(
+    heights = c(
+      4,      # heterozygosity
+      0.40,   # significance bar
+      0.70    # PAF identity bar
+    ),
+    guides = "collect"
+  ) &
+
+  theme(
+    legend.position = "right"
+  )
+
+
+
+# ============================================================
+# Save
+# ============================================================
+
+ggsave(
+  paste0(
+    OUT,
+    ".hets_50kb.by_sex.significance.WZ_identity.pdf"
+  ),
+  combined,
+  width = 12,
+  height = 3,
+  dpi = 300
+)
+```

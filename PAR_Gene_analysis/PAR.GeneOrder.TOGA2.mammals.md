@@ -85,6 +85,13 @@ Rhynchonycteris_naso,CM073052:138579092-142670400
 Symphalangus_syndactylus,NC_072447:0-16994066
 Trichechus_inunguis,CM102173:0-9624845
 Urocitellus_parryii,CM099876:122998411-131433435
+Canis_lupus_baileyi,NC_132876:118611595-125236116
+Nyctalus_leisleri,OZ183628:0-1665649
+Dasypus_novemcinctus,NC_080704:0-9679476
+Artibeus_intermedius,CM076326:149640977-151570710
+Artibeus_lituratus,CM076392:0-981392
+Myotis_mystacinus,OZ075425.2:126527189-127971689
+Desmodus_rotundus,h1_SUPER_X:98077179-101544622
 EOF
 
 
@@ -200,8 +207,11 @@ echo "Summary table:            $summary"
 ```
 
 ## PAR boundaries
+# Myotis_mystacanus,OZ075425.2:125458419-127971689 OR 126527189-127971689 (1.05 Mb between first and second window, windows are only 17-21kb)
+
 
 cat > PAR.species_chr_region.txt <<'EOF'
+Artibeus_lituratus,CM076392:0-981392
 Balaenoptera_physalus,OZ239531:0-7257636
 Bos_taurus,NC_040105:0-6843483
 Callithrix_jacchus,CM111807:0-1757279
@@ -221,6 +231,7 @@ Meles_meles,OV277448:0-6399546
 Mesoplodon_bidens,OZ073217:135117924-142816029
 Molossus_nigricans,CM078089:0-4370896
 Mustela_nivalis_vulgaris,CM169857:131948904-138477583
+Myotis_mystacinus,OZ075425:126527189-127971689
 Myotis_nattereri,OZ125678:0-2687171
 Ovis_aries,CP162266:0-7021881
 Ovis_canadensis,NC_091727:0-7072606
@@ -236,14 +247,11 @@ Symphalangus_syndactylus,NC_072447:0-16738677
 Trichechus_inunguis,CM102173:0-9624845
 Urocitellus_parryii,CM099876:122998411-131433435
 Artibeus_intermedius,CM076326:149640977-151570710
-Artibeus_lituratus,CM076392:0-1226197
 Corynorhinus_townsendii,CM133721.1:0-1829836
 Miniopterus_schreibersii,NC_071400:103813303-106815783
-Desmodus_rotundus,h1_SUPER_X:98077179-101544622
 Canis_lupus_baileyi,NC_132876:118611595-125236116
 Nyctalus_leisleri,OZ183628:0-1665649
 Dasypus_novemcinctus,NC_080704:0-9679476
-Ochotona_princeps,NC_080865:0-94380
 EOF
 
 # analyze separately -- rodents
@@ -274,6 +282,8 @@ chmod +x find_par_genes_toga.awk
 awk -F',' '{print $1}' PAR.species_chr_region.txt > species.txt
 
 cat > species.txt <<'EOF'
+Artibeus_lituratus
+Myotis_mystacinus
 Lycaon_pictus
 Bos_taurus
 Panthera_onca
@@ -346,9 +356,9 @@ done < species.chrX.txt
 chmod +x find_par_genes_toga.chrX.awk
 ./find_par_genes_toga.chrX.awk PAR.species_chr_region.chrX.txt > mammals_PAR_genes.chrX.tsv
 
-# Add Desmodus rotundus
-chmod +x find_par_genes.toga.SuperX.awk
-grep Desmodus_rotundus PAR.species_chr_region.txt > PAR.species_chr_region.SuperX.txt
+# Add Desmodus rotundus -- Do not do this -- it does not have TOGA2 annotations for this version
+# chmod +x find_par_genes.toga.SuperX.awk
+# grep Desmodus_rotundus PAR.species_chr_region.txt > PAR.species_chr_region.SuperX.txt
 
 ./find_par_genes.toga.SuperX.awk PAR.species_chr_region.SuperX.txt > mammals_PAR_genes.SuperX.tsv
 
@@ -466,8 +476,9 @@ sed -i 's/AMELX/AMEL/g' mammals_PAR_genes.all.tsv
 { head -n 1 mammals_PAR_genes.all.tsv; tail -n +2 mammals_PAR_genes.all.tsv | sort -u; } > mammals_PAR_genes.all.tsv.tmp
 mv mammals_PAR_genes.all.tsv.tmp mammals_PAR_genes.all.tsv
 
-
-
+wc -l mammals_PAR_genes.all.tsv
+grep -v Desmodus mammals_PAR_genes.all.tsv > mammals_PAR_genes.all.tsv.tmp
+mv mammals_PAR_genes.all.tsv.tmp mammals_PAR_genes.all.tsv
 
 
 # Rscript plot_combined.allgenelabels.mammals.R

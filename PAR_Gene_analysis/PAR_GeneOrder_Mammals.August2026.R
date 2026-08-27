@@ -9,13 +9,34 @@ library(scales)
 # ============================================================
 
 # Gene to use as ordinal origin point
-GENE <- "DYM"
+GENE <- "SHROOM2"
+
+XG_ORIGIN_SPECIES <- c(
+  "Pan_paniscus",
+  "Pan_troglodytes",
+  "Homo_sapiens",
+  "Gorilla_gorilla",
+  "Pongo_abelii",
+  "Pongo_pygmaeus",
+  "Symphalangus_syndactylus",
+  "Macaca_nemestrina"
+)
+
+FLIP_NO_PAR_SPECIES <- c( 
+  "Thomomys_bottae", 
+  "Microtus_pennsylvanicus", 
+  "Nyctalus_leisleri", 
+  "Myotis_mystacinus")
+
+
+XG_ORIGIN_SPECIES <- c(
+)
 
 # How many ordinal positions to show on either side of GENE
-ORDINAL_MIN <- -30
-ORDINAL_MAX <- 35
+ORDINAL_MIN <- -45
+ORDINAL_MAX <- 37
 
-gene_file <- "birds_PAR_genes.all.tsv"
+gene_file <- "mammals_PAR_genes.all.ZNF_arrays.tsv"
 
 tree_file <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk"
 
@@ -61,20 +82,11 @@ species_par <- read_csv(
   mutate(
     PARStart = as.numeric(PARStart),
     PARStop = as.numeric(PARStop),
-    par_size_Mb = abs(PARStop - PARStart)
-  )
-
-# Rename ostrich
-species_par <- species_par %>%
-  mutate(
-    Species = recode(
-      Species,
-      "Struthio_camelus" = "Struthio_camelus_australis"
-    )
+    par_size_bp = abs(PARStop - PARStart)
   )
 
 # ============================================================
-# Normalize column names from birds_PAR_genes.all.tsv
+# Normalize column names from mammals_PAR_genes.tsv
 # ============================================================
 
 df <- df %>%
@@ -98,7 +110,7 @@ df <- df %>%
 
 genes_in_PAR_any_species <- df %>%
   filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
-  filter(Species %in% c("Taeniopygia_guttata")) %>%
+  filter(Species %in% c("Homo_sapiens")) %>%
   distinct(Gene) %>%
   pull(Gene)
 
@@ -135,20 +147,51 @@ tree_filtered <- keep.tip(
   intersect(tree$tip.label, species_cols)
 )
 
+tree_filtered <- ape::rotate(tree_filtered, node = 34)
+tree_filtered <- ape::rotate(tree_filtered, node = 56)
+tree_filtered <- ape::rotate(tree_filtered, node = 57)
+tree_filtered <- ape::rotate(tree_filtered, node = 58)
+tree_filtered <- ape::rotate(tree_filtered, node = 59)
+tree_filtered <- ape::rotate(tree_filtered, node = 60)
+
+p_tree_tmp <- ggtree(tree_filtered, ladderize = FALSE)
+
+tree_plot_order <- p_tree_tmp$data %>%
+  filter(isTip) %>%
+  arrange(y) %>%
+  pull(label)
+
+species_order <- tree_plot_order
+
+par_binary_tree <- par_binary %>%
+  select(Gene, all_of(species_order))
+
+df_par_relevant <- df_par_relevant %>%
+  filter(Species %in% species_order)
+
+species_par <- species_par %>%
+  filter(Species %in% species_order)
+
 # ============================================================
-# Diagnostic tree with node numbers for choosing rotations
+# 1. Phylogeny panel
 # ============================================================
 
-tree_filtered <- ape::rotate(tree_filtered, node = 34)
-tree_filtered <- ape::rotate(tree_filtered, node = 35)
-tree_filtered <- ape::rotate(tree_filtered, node = 36)
-tree_filtered <- ape::rotate(tree_filtered, node = 37)
-tree_filtered <- ape::rotate(tree_filtered, node = 38)
-tree_filtered <- ape::rotate(tree_filtered, node = 39)
-tree_filtered <- ape::rotate(tree_filtered, node = 40)
-tree_filtered <- ape::rotate(tree_filtered, node = 41)
-tree_filtered <- ape::rotate(tree_filtered, node = 42)
-tree_filtered <- ape::rotate(tree_filtered, node = 43)
+p_tree <- ggtree(tree_filtered, ladderize = FALSE) +
+  geom_tiplab(size = 5, align = FALSE) +
+  xlim_tree(0.4) +
+  coord_cartesian(clip = "off") +
+  theme_tree2() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    plot.margin = margin(5.5, 5.5, 5.5, 5.5)
+  )
+
+
+# ============================================================
+# TEST: Diagnostic tree with node numbers for choosing rotations
+# ============================================================
 
 test_tree_png <- "tree_filtered_node_numbers.png"
 
@@ -190,40 +233,6 @@ ggsave(
   height = max(6, length(tree_filtered$tip.label) * 0.22),
   dpi = 300
 )
-
-p_tree_tmp <- ggtree(tree_filtered, ladderize = FALSE)
-
-tree_plot_order <- p_tree_tmp$data %>%
-  filter(isTip) %>%
-  arrange(y) %>%
-  pull(label)
-
-species_order <- tree_plot_order
-
-par_binary_tree <- par_binary %>%
-  select(Gene, all_of(species_order))
-
-df_par_relevant <- df_par_relevant %>%
-  filter(Species %in% species_order)
-
-species_par <- species_par %>%
-  filter(Species %in% species_order)
-
-# ============================================================
-# 1. Phylogeny panel
-# ============================================================
-
-p_tree <- ggtree(tree_filtered, ladderize = FALSE) +
-  geom_tiplab(size = 5, align = FALSE) +
-  xlim_tree(0.4) +
-  coord_cartesian(clip = "off") +
-  theme_tree2() +
-  theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    plot.margin = margin(5.5, 5.5, 5.5, 5.5)
-  )
 
 # ============================================================
 # 2. UpSet-style intersection panel
@@ -269,7 +278,6 @@ intersection_matrix <- intersection_counts %>%
 p_bar <- ggplot(intersection_counts, aes(x = intersection_index, y = n_genes)) +
   geom_col() +
   scale_x_discrete(drop = FALSE) +
-  scale_y_continuous(limits = c(0, 10)) +
   labs(
     x = NULL,
     y = NULL,
@@ -310,18 +318,53 @@ p_matrix <- ggplot(intersection_matrix, aes(x = intersection_index, y = Species)
 # Gene order is centered on GENE, so GENE = ordinal position 0
 # ============================================================
 
+
+par_orientation <- df %>%
+  group_by(Species, Chrom) %>%
+  mutate(
+    chr_start = 0,
+    chr_end = max(Stop_pos, na.rm = TRUE)
+  ) %>%
+  filter(Gene == GENE) %>%
+  summarise(
+    chr_start = first(chr_start),
+    chr_end = first(chr_end),
+
+    origin_midpoint = first(
+      (Start_pos + Stop_pos) / 2
+    ),
+
+    distance_to_start = origin_midpoint - chr_start,
+    distance_to_end = chr_end - origin_midpoint,
+
+    # Flip when SHROOM2 is closer to the chromosome end
+    flip_orientation = distance_to_end < distance_to_start,
+
+    .groups = "drop"
+  )
+
 par_genes <- df %>%
-  filter(In_PAR %in% c("Y", "Edge", "N")) %>%
+  filter(Gene %in% genes_in_PAR_any_species) %>%
+  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
   filter(Species %in% species_order) %>%
   mutate(
     midpoint = (Start_pos + Stop_pos) / 2
   ) %>%
-  group_by(Species, Chrom) %>%
+  left_join(
+    par_orientation,
+    by = c("Species", "Chrom")
+  ) %>%
   mutate(
-    PAR_at_end = min(Start_pos[In_PAR %in% c("Y", "Edge")], na.rm = TRUE) >= 10000000,
-    adjusted_pos = if_else(PAR_at_end, -midpoint, midpoint)
+    flip_orientation = coalesce(flip_orientation, FALSE),
+
+    adjusted_pos = if_else(
+      flip_orientation,
+      -midpoint,
+      midpoint
+    )
   ) %>%
   arrange(Species, Chrom, adjusted_pos) %>%
+  group_by(Species, Chrom) %>%
   mutate(
     raw_PAR_order = row_number()
   ) %>%
@@ -333,12 +376,33 @@ par_genes <- df %>%
 # ordinal occurrence after chromosome/PAR orientation adjustment.
 # ------------------------------------------------------------
 
+origin_gene_by_species <- tibble(
+  Species = species_order,
+  Origin_gene = if_else(
+    Species %in% XG_ORIGIN_SPECIES,
+    "XG",
+    GENE
+  )
+)
+
 gene_origin <- par_genes %>%
-  filter(Gene == GENE) %>%
-  group_by(Species) %>%
+  inner_join(origin_gene_by_species, by = "Species") %>%
+  filter(Gene == Origin_gene) %>%
+  group_by(Species, Origin_gene) %>%
   slice_min(raw_PAR_order, n = 1, with_ties = FALSE) %>%
   ungroup() %>%
-  select(Species, origin_raw_PAR_order = raw_PAR_order)
+  mutate(
+    origin_raw_PAR_order = if_else(
+      Species %in% XG_ORIGIN_SPECIES,
+      raw_PAR_order + 24,
+      raw_PAR_order
+    )
+  ) %>%
+  select(
+    Species,
+    Origin_gene,
+    origin_raw_PAR_order
+  )
 
 missing_origin_species <- setdiff(
   as.character(species_order),
@@ -346,14 +410,23 @@ missing_origin_species <- setdiff(
 )
 
 if (length(missing_origin_species) > 0) {
+  missing_origin_tbl <- origin_gene_by_species %>%
+    filter(Species %in% missing_origin_species)
+
   warning(
     paste0(
-      "Origin gene '", GENE, "' was not found in these species and they will be omitted from the gene-order panel: ",
-      paste(missing_origin_species, collapse = ", ")
+      "Origin gene was not found in these species and they will be omitted from the gene-order panel: ",
+      paste(
+        paste0(
+          missing_origin_tbl$Species,
+          " expected ",
+          missing_origin_tbl$Origin_gene
+        ),
+        collapse = ", "
+      )
     )
   )
 }
-
 
 par_genes <- par_genes %>%
   inner_join(gene_origin, by = "Species") %>%
@@ -364,7 +437,7 @@ par_genes <- par_genes %>%
     PAR_order >= ORDINAL_MIN,
     PAR_order <= ORDINAL_MAX
   )
-  
+
 plot_x_min <- min(par_genes$PAR_order, na.rm = TRUE) - 2
 plot_x_max <- plot_x_min + (ORDINAL_MAX - ORDINAL_MIN)
 
@@ -449,7 +522,7 @@ par_array_genes_edge <- par_genes %>%
   filter(In_PAR == "Edge", is_array_gene)
 
 ref_species_labels <- par_genes %>%
-  filter(Species == "Taeniopygia_guttata")
+  filter(Species == "Homo_sapiens")
 
 # ------------------------------------------------------------
 # Label the last PAR/Edge gene in each species
@@ -468,7 +541,7 @@ last_par_gene_labels <- par_genes %>%
     with_ties = FALSE
   ) %>%
   ungroup()
-
+  
 # ============================================================
 # Gene-level PAR/Edge conservation panel
 # Bar above each Homo sapiens gene = number of genomes where
@@ -482,7 +555,7 @@ gene_par_edge_counts <- df %>%
   distinct(Species, Gene) %>%
   count(Gene, name = "n_genomes_PAR_or_Edge")
 
-finch_gene_par_edge_counts <- ref_species_labels %>%
+homo_gene_par_edge_counts <- ref_species_labels %>%
   distinct(Gene, Gene_label, PAR_order) %>%
   left_join(gene_par_edge_counts, by = "Gene") %>%
   mutate(
@@ -490,7 +563,7 @@ finch_gene_par_edge_counts <- ref_species_labels %>%
   )
 
 p_gene_par_edge_count <- ggplot(
-  finch_gene_par_edge_counts,
+  homo_gene_par_edge_counts,
   aes(x = PAR_order, y = n_genomes_PAR_or_Edge)
 ) +
   geom_col(width = 0.8) +
@@ -501,7 +574,7 @@ p_gene_par_edge_count <- ggplot(
       by = 10
     ),
     limits = c(plot_x_min, plot_x_max),
-    expand = expansion(mult = c(0, 0.03))
+    expand = expansion(mult = c(0, 0))
   ) +
   scale_y_continuous(
     expand = expansion(mult = c(0, 0.08))
@@ -518,7 +591,7 @@ p_gene_par_edge_count <- ggplot(
     panel.grid.minor = element_blank(),
     plot.margin = margin(5.5, 5.5, 0, 5.5)
   )
-
+  
 ortholog_segments <- par_genes %>%
   group_by(Species, Gene) %>%
   slice_min(abs(PAR_order), n = 1, with_ties = FALSE) %>%
@@ -535,7 +608,7 @@ ortholog_segments <- par_genes %>%
   ungroup()
 
 highlight_segments <- par_genes %>%
-  filter(Gene %in% c("DYM")) %>%
+  filter(Gene %in% c("SHROOM2", "XG")) %>%
   group_by(Species, Gene) %>%
   slice_min(abs(PAR_order), n = 1, with_ties = FALSE) %>%
   ungroup() %>%
@@ -683,7 +756,7 @@ p_gene_order <- ggplot(par_genes, aes(x = PAR_order, y = species_index)) +
     expand = expansion(mult = c(0.01, 0.01))
   ) +
   labs(
-    x = paste0("Ordinal gene order relative to ", GENE),
+    x = paste0("Ordinal gene order"),
     y = NULL,
     title = NULL
   ) +
@@ -719,23 +792,20 @@ par_size <- species_par %>%
   ) %>%
   filter(!is.na(Species))
 
-p_par_size <- ggplot(par_size, aes(x = par_size_Mb, y = Species)) +
+p_par_size <- ggplot(par_size, aes(x = par_size_bp, y = Species)) +
   geom_col() +
   scale_y_discrete(limits = species_order) +
   scale_x_continuous(
-    labels = scales::label_number(scale = 1e-6),
-    limits = c(0, 20e6),
+    labels = scales::label_number(scale = 1e-6, suffix = " Mb"),
     expand = expansion(mult = c(0, 0.08))
   ) +
   labs(
-    x = NULL,
+    x = "PAR size",
     y = NULL,
     title = NULL
   ) +
   theme_bw() +
   theme(
-    axis.title.x = element_text(size = 14),
-    axis.text.x = element_text(size = 12),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     panel.grid.major.y = element_blank(),
@@ -746,7 +816,6 @@ p_par_size <- ggplot(par_size, aes(x = par_size_Mb, y = Species)) +
 # ============================================================
 # Combine panels
 # ============================================================
-
 
 blank_tree_space <- ggplot() + theme_void()
 blank_gene_space <- ggplot() + theme_void()
@@ -761,19 +830,27 @@ bottom_row <- p_tree + p_par_size + p_gene_order +
 combined_plot <- top_row / bottom_row +
   plot_layout(heights = c(0.5, 4)) +
   plot_annotation(
-    title = "Phylogeny, PAR size, and PAR gene order",
+    title = "Phylogeny, PAR gene intersections, PAR gene order, and PAR size",
     theme = theme(
       plot.title = element_text(size = 14, face = "bold")
     )
   )
 
 ggsave(
-  filename = paste0("combined_phylogeny_upset_gene_order_PAR_size.", GENE, ".pdf"),
+  filename = paste0("combined_phylogeny_upset_gene_order_PAR_size.SHROOM_XG.conserved_genes.pdf"),
   plot = combined_plot,
   width = 24,
   height = 18,
   limitsize = FALSE
 )
+
+
+
+
+
+
+
+
 
 
 
@@ -821,9 +898,8 @@ pgls_data <- species_par %>%
   ) %>%
   filter(
     is.finite(par_size_Mb),
-    par_size_Mb > 0,
-    is.finite(par_gene_count),
-    par_gene_count > 0
+    par_size_Mb > 1,
+    is.finite(par_gene_count)
   ) %>%
   distinct(Species, .keep_all = TRUE)
 
@@ -914,7 +990,7 @@ ggplot(
   ) +
   theme_bw()
 
-ggsave("PGLS.AllBirds.png")
+ggsave("PGLS.AllMammals.png")
 
 # Plot residuals
 library(ggrepel)
@@ -951,73 +1027,12 @@ p_residuals <- ggplot(
   ) +
   theme_bw()
 
-ggsave("PGLS.residuals.AllBirds.png", p_residuals)
+ggsave("PGLS.residuals.AllMammals.png", p_residuals)
 
 
 
 # ============================================================
-# Ordinary linear model (no phylogenetic correction)
-# ============================================================
-
-lm_fit <- lm(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data
-)
-
-summary(lm_fit)
-
-# Add ordinary LM residuals
-pgls_data$lm_residual <- residuals(lm_fit)
-
-# Standardized residuals are useful for identifying outliers
-pgls_data$lm_standardized_residual <- rstandard(lm_fit)
-
-
-# ============================================================
-# Plot residuals from ordinary LM
-# ============================================================
-
-p_lm_residuals <- ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = lm_standardized_residual
-  )
-) +
-  geom_hline(
-    yintercept = 0,
-    linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = c(-2, 2),
-    linetype = "dotted"
-  ) +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(
-      pgls_data,
-      abs(lm_standardized_residual) > 2
-    ),
-    aes(label = Species),
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Standardized LM residual"
-  ) +
-  theme_bw()
-
-ggsave(
-  "LM.residuals.AllBirds.png",
-  p_lm_residuals
-)
-
-
-
-
-
-# ============================================================
-# Remove ratites and redo
+# Remove rodents and redo
 # ============================================================
 
 
@@ -1031,8 +1046,8 @@ pgls_data <- species_par %>%
   ) %>%
   filter(
     is.finite(par_size_Mb),
-    par_size_Mb > 0,
-    par_size_Mb < 14,
+    par_size_Mb > 1,
+    par_gene_count < 40,
     is.finite(par_gene_count)
   ) %>%
   distinct(Species, .keep_all = TRUE)
@@ -1138,7 +1153,7 @@ ggplot(
   ) +
   theme_bw()
 
-ggsave("PGLS.AllBirds.noRatite.png")
+ggsave("PGLS.AllMammals.noRodents.png")
 
 # Plot residuals
 library(ggrepel)
@@ -1175,68 +1190,7 @@ p_residuals <- ggplot(
   ) +
   theme_bw()
 
-ggsave("PGLS.residuals.AllBirds.noRatites.png", p_residuals)
-
-
-
-
-# ============================================================
-# Ordinary linear model (no phylogenetic correction)
-# ============================================================
-
-lm_fit <- lm(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data
-)
-
-summary(lm_fit)
-
-# Add ordinary LM residuals
-pgls_data$lm_residual <- residuals(lm_fit)
-
-# Standardized residuals are useful for identifying outliers
-pgls_data$lm_standardized_residual <- rstandard(lm_fit)
-
-
-# ============================================================
-# Plot residuals from ordinary LM
-# ============================================================
-
-p_lm_residuals <- ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = lm_standardized_residual
-  )
-) +
-  geom_hline(
-    yintercept = 0,
-    linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = c(-2, 2),
-    linetype = "dotted"
-  ) +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(
-      pgls_data,
-      abs(lm_standardized_residual) > 2
-    ),
-    aes(label = Species),
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Standardized LM residual"
-  ) +
-  theme_bw()
-
-ggsave(
-  "LM.residuals.AllBirds.noRatites.png",
-  p_lm_residuals
-)
-
+ggsave("PGLS.residuals.AllMammals.noRodents.png", p_residuals)
 
 
 
@@ -1318,9 +1272,8 @@ pgls_data <- species_par %>%
   ) %>%
   filter(
     is.finite(par_size_Mb),
-    par_size_Mb > 0,
-    is.finite(par_gene_count),
-    par_gene_count > 0
+    par_size_Mb > 1,
+    is.finite(par_gene_count)
   ) %>%
   distinct(Species, .keep_all = TRUE) %>%
   mutate(
@@ -1453,7 +1406,7 @@ p_all <- ggplot(
   theme_bw()
 
 ggsave(
-  "PGLS.AllBirds.logTransformed.png",
+  "PGLS.AllMammals.logTransformed.png",
   p_all
 )
 
@@ -1504,14 +1457,14 @@ p_residuals <- ggplot(
   theme_bw()
 
 ggsave(
-  "PGLS.residuals.AllBirds.logTransformed.png",
+  "PGLS.residuals.AllMammals.logTransformed.png",
   p_residuals
 )
 
 
 
 # ============================================================
-# Remove ratites and redo
+# Remove rodents / high-gene-count species and redo
 # ============================================================
 
 pgls_data <- species_par %>%
@@ -1524,9 +1477,9 @@ pgls_data <- species_par %>%
   ) %>%
   filter(
     is.finite(par_size_Mb),
-    par_size_Mb < 14,
-    is.finite(par_gene_count),
-    par_gene_count > 0
+    par_size_Mb > 1,
+    par_gene_count < 40,
+    is.finite(par_gene_count)
   ) %>%
   distinct(Species, .keep_all = TRUE) %>%
   mutate(
@@ -1647,7 +1600,7 @@ summary(pgls_fit_lambda1)
 # Plot reduced dataset
 # ============================================================
 
-p_no_ratites <- ggplot(
+p_no_rodents <- ggplot(
   pgls_data,
   aes(
     x = log_par_size,
@@ -1672,8 +1625,8 @@ p_no_ratites <- ggplot(
   theme_bw()
 
 ggsave(
-  "PGLS.AllBirds.noRatites.logTransformed.png",
-  p_no_ratites
+  "PGLS.AllMammals.noRodents.logTransformed.png",
+  p_no_rodents
 )
 
 
@@ -1727,6 +1680,6 @@ p_residuals <- ggplot(
   theme_bw()
 
 ggsave(
-  "PGLS.residuals.AllBirds.noRatites.logTransformed.png",
+  "PGLS.residuals.AllMammals.noRodents.logTransformed.png",
   p_residuals
 )
