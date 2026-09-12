@@ -11,13 +11,15 @@ library(scales)
 # Gene to use as ordinal origin point
 GENE <- "DYM"
 
+INVERT_PAR_ORDER_SPECIES <- "Amazona_ochrocephala"
+
 # How many ordinal positions to show on either side of GENE
 ORDINAL_MIN <- -30
 ORDINAL_MAX <- 35
 
 gene_file <- "birds_PAR_genes.all.tsv"
 
-tree_file <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk"
+tree_file <- "/data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.edited.nwk"
 
 par_size_file <- "PAR.species_chr_region.gaps.txt"
 
@@ -139,7 +141,6 @@ tree_filtered <- keep.tip(
 # Diagnostic tree with node numbers for choosing rotations
 # ============================================================
 
-tree_filtered <- ape::rotate(tree_filtered, node = 34)
 tree_filtered <- ape::rotate(tree_filtered, node = 35)
 tree_filtered <- ape::rotate(tree_filtered, node = 36)
 tree_filtered <- ape::rotate(tree_filtered, node = 37)
@@ -149,6 +150,7 @@ tree_filtered <- ape::rotate(tree_filtered, node = 40)
 tree_filtered <- ape::rotate(tree_filtered, node = 41)
 tree_filtered <- ape::rotate(tree_filtered, node = 42)
 tree_filtered <- ape::rotate(tree_filtered, node = 43)
+tree_filtered <- ape::rotate(tree_filtered, node = 44)
 
 test_tree_png <- "tree_filtered_node_numbers.png"
 
@@ -360,6 +362,19 @@ par_genes <- par_genes %>%
   mutate(
     PAR_order = raw_PAR_order - origin_raw_PAR_order
   ) %>%
+  group_by(Species) %>%
+  mutate(
+    par_min_order = min(PAR_order[In_PAR %in% c("Y", "Edge")], na.rm = TRUE),
+    par_max_order = max(PAR_order[In_PAR %in% c("Y", "Edge")], na.rm = TRUE),
+    PAR_order = if_else(
+      Species == INVERT_PAR_ORDER_SPECIES &
+        In_PAR %in% c("Y", "Edge"),
+      par_min_order + par_max_order - PAR_order,
+      PAR_order
+    )
+  ) %>%
+  ungroup() %>%
+  select(-par_min_order, -par_max_order) %>%
   filter(
     PAR_order >= ORDINAL_MIN,
     PAR_order <= ORDINAL_MAX
@@ -785,535 +800,115 @@ ggsave(
 
 
 
-# ============================================================
-# Test for relationship between base pair size and gene count
-# ============================================================
-
-library(dplyr)
-library(ape)
-library(nlme)
-
-# ============================================================
-# Build species-level data for PGLS
-# ============================================================
-
-par_gene_counts <- df %>%
-  filter(Gene %in% genes_in_PAR_any_species) %>%
-  filter(In_PAR %in% c("Y", "Edge")) %>%
-  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
-  distinct(Species, Gene) %>%
-  count(Species, name = "par_gene_count")
-
-species_par$par_size_bp <- species_par$PARStop - species_par$PARStart
-
-species_par <- species_par %>%
-  mutate(
-    par_size_Mb = par_size_bp / 1e6
-  )
-
-pgls_data <- species_par %>%
-  select(Species, par_size_Mb) %>%
-  left_join(par_gene_counts, by = "Species") %>%
-  mutate(
-    # Use zero only when a species genuinely has no PAR genes.
-    # If missing means "not assessed", do not replace with zero.
-    par_gene_count = replace_na(par_gene_count, 0L)
-  ) %>%
-  filter(
-    is.finite(par_size_Mb),
-    par_size_Mb > 0,
-    is.finite(par_gene_count),
-    par_gene_count > 0
-  ) %>%
-  distinct(Species, .keep_all = TRUE)
-
-
-# Calculate PICs
-genePic <- pic(pgls_data$par_gene_count, tree_filtered)
-parsizePic <- pic(pgls_data$par_size_Mb, tree_filtered)
-
-# Make a model
-picModel <- lm(genePic ~ parsizePic - 1)
-
-# Yes, significant
-summary(picModel)
-
 
 
 
 
 # ============================================================
-# Match the regression data and tree
-# ============================================================
-
-species_for_model <- intersect(
-  tree_filtered$tip.label,
-  pgls_data$Species
-)
-
-pgls_tree <- keep.tip(
-  tree_filtered,
-  species_for_model
-)
-
-pgls_data <- pgls_data %>%
-  filter(Species %in% pgls_tree$tip.label) %>%
-  arrange(match(Species, pgls_tree$tip.label))
-
-# Confirm exact matching and ordering
-stopifnot(identical(
-  as.character(pgls_data$Species),
-  pgls_tree$tip.label
-))
-
-# nlme uses row names to associate observations with tree tips
-pgls_data <- as.data.frame(pgls_data)
-rownames(pgls_data) <- pgls_data$Species
-
-# Pagel's lambda correlation structure
-lambda_cor <- corPagel(
-  value = 0.5,
-  phy = pgls_tree,
-  fixed = FALSE,
-  form = ~ Species
-)
-
-pgls_fit <- gls(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data,
-  correlation = lambda_cor,
-  method = "ML"
-)
-
-summary(pgls_fit)
-intervals(pgls_fit)
-
-
-
-ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = par_gene_count,
-    label = Species
-  )
-) +
-  geom_point(size = 3) +
-  geom_smooth(
-    method = "lm",
-    formula = y ~ x,
-    se = TRUE
-  ) +
-  geom_text(
-    nudge_y = 0.5,
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Number of genes in the PAR"
-  ) +
-  theme_bw()
-
-ggsave("PGLS.AllBirds.png")
-
-# Plot residuals
-library(ggrepel)
-
-# Add model residuals to the data
-pgls_data$residual <- residuals(pgls_fit, type = "normalized")
-
-# Choose outliers, e.g. |normalized residual| > 2
-pgls_data <- pgls_data %>%
-  mutate(
-    outlier = abs(residual) > 2
-  )
-
-pgls_data$residual <- residuals(pgls_fit, type = "normalized")
-
-p_residuals <- ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = residual
-  )
-) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = c(-2, 2), linetype = "dotted") +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(pgls_data, abs(residual) > 2),
-    aes(label = Species),
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Normalized PGLS residual"
-  ) +
-  theme_bw()
-
-ggsave("PGLS.residuals.AllBirds.png", p_residuals)
-
-
-
-# ============================================================
-# Ordinary linear model (no phylogenetic correction)
-# ============================================================
-
-lm_fit <- lm(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data
-)
-
-summary(lm_fit)
-
-# Add ordinary LM residuals
-pgls_data$lm_residual <- residuals(lm_fit)
-
-# Standardized residuals are useful for identifying outliers
-pgls_data$lm_standardized_residual <- rstandard(lm_fit)
-
-
-# ============================================================
-# Plot residuals from ordinary LM
-# ============================================================
-
-p_lm_residuals <- ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = lm_standardized_residual
-  )
-) +
-  geom_hline(
-    yintercept = 0,
-    linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = c(-2, 2),
-    linetype = "dotted"
-  ) +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(
-      pgls_data,
-      abs(lm_standardized_residual) > 2
-    ),
-    aes(label = Species),
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Standardized LM residual"
-  ) +
-  theme_bw()
-
-ggsave(
-  "LM.residuals.AllBirds.png",
-  p_lm_residuals
-)
-
-
-
-
-
-# ============================================================
-# Remove ratites and redo
-# ============================================================
-
-
-pgls_data <- species_par %>%
-  select(Species, par_size_Mb) %>%
-  left_join(par_gene_counts, by = "Species") %>%
-  mutate(
-    # Use zero only when a species genuinely has no PAR genes.
-    # If missing means "not assessed", do not replace with zero.
-    par_gene_count = replace_na(par_gene_count, 0L)
-  ) %>%
-  filter(
-    is.finite(par_size_Mb),
-    par_size_Mb > 0,
-    par_size_Mb < 14,
-    is.finite(par_gene_count)
-  ) %>%
-  distinct(Species, .keep_all = TRUE)
-
-# Calculate PICs
-genePic <- pic(pgls_data$par_gene_count, tree_filtered)
-parsizePic <- pic(pgls_data$par_size_Mb, tree_filtered)
-
-# Make a model
-picModel <- lm(genePic ~ parsizePic - 1)
-
-# Yes, significant
-summary(picModel)
-
-
-
-
-
-# ============================================================
-# Match the regression data and tree
-# ============================================================
-
-species_for_model <- intersect(
-  tree_filtered$tip.label,
-  pgls_data$Species
-)
-
-pgls_tree <- keep.tip(
-  tree_filtered,
-  species_for_model
-)
-
-pgls_data <- pgls_data %>%
-  filter(Species %in% pgls_tree$tip.label) %>%
-  arrange(match(Species, pgls_tree$tip.label))
-
-# Confirm exact matching and ordering
-stopifnot(identical(
-  as.character(pgls_data$Species),
-  pgls_tree$tip.label
-))
-
-# nlme uses row names to associate observations with tree tips
-pgls_data <- as.data.frame(pgls_data)
-rownames(pgls_data) <- pgls_data$Species
-
-# Pagel's lambda correlation structure
-lambda_cor <- corPagel(
-  value = 0.5,
-  phy = pgls_tree,
-  fixed = FALSE,
-  form = ~ Species
-)
-
-pgls_fit <- gls(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data,
-  correlation = lambda_cor,
-  method = "ML"
-)
-
-summary(pgls_fit)
-intervals(pgls_fit)
-
-# Fit with lambda fixed at 1 -- there is too much phylogenetic dependence for the model to converge
-lambda1_cor <- corPagel(
-  value = 1,
-  phy = pgls_tree,
-  fixed = TRUE,
-  form = ~ Species
-)
-
-pgls_fit <- gls(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data,
-  correlation = lambda1_cor,
-  method = "ML"
-)
-
-summary(pgls_fit)
-
-ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = par_gene_count,
-    label = Species
-  )
-) +
-  geom_point(size = 3) +
-  geom_smooth(
-    method = "lm",
-    formula = y ~ x,
-    se = TRUE
-  ) +
-  geom_text(
-    nudge_y = 0.5,
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Number of genes in the PAR"
-  ) +
-  theme_bw()
-
-ggsave("PGLS.AllBirds.noRatite.png")
-
-# Plot residuals
-library(ggrepel)
-
-# Add model residuals to the data
-pgls_data$residual <- residuals(pgls_fit, type = "normalized")
-
-# Choose outliers, e.g. |normalized residual| > 2
-pgls_data <- pgls_data %>%
-  mutate(
-    outlier = abs(residual) > 2
-  )
-
-pgls_data$residual <- residuals(pgls_fit, type = "normalized")
-
-p_residuals <- ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = residual
-  )
-) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = c(-2, 2), linetype = "dotted") +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(pgls_data, abs(residual) > 2),
-    aes(label = Species),
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Normalized PGLS residual"
-  ) +
-  theme_bw()
-
-ggsave("PGLS.residuals.AllBirds.noRatites.png", p_residuals)
-
-
-
-
-# ============================================================
-# Ordinary linear model (no phylogenetic correction)
-# ============================================================
-
-lm_fit <- lm(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data
-)
-
-summary(lm_fit)
-
-# Add ordinary LM residuals
-pgls_data$lm_residual <- residuals(lm_fit)
-
-# Standardized residuals are useful for identifying outliers
-pgls_data$lm_standardized_residual <- rstandard(lm_fit)
-
-
-# ============================================================
-# Plot residuals from ordinary LM
-# ============================================================
-
-p_lm_residuals <- ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = lm_standardized_residual
-  )
-) +
-  geom_hline(
-    yintercept = 0,
-    linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = c(-2, 2),
-    linetype = "dotted"
-  ) +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(
-      pgls_data,
-      abs(lm_standardized_residual) > 2
-    ),
-    aes(label = Species),
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Standardized LM residual"
-  ) +
-  theme_bw()
-
-ggsave(
-  "LM.residuals.AllBirds.noRatites.png",
-  p_lm_residuals
-)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ============================================================
-# Test for relationship between PAR size and gene count
-# Using log-transformed PAR gene counts and PAR sizes
+# PAR size vs PAR gene count in birds
+#
+# Models:
+#   1. lm -- all birds
+#   2. PGLS -- all birds
+#   3. lm -- ratites removed
+#   4. PGLS -- ratites removed
+#
+# Response:  par_gene_count
+# Predictor: par_size_Mb
 # ============================================================
 
 library(dplyr)
-library(stringr)
 library(tidyr)
+library(stringr)
 library(ape)
-library(nlme)
+library(phylolm)
 library(ggplot2)
 library(ggrepel)
 
 
 # ============================================================
-# Build species-level data
+# 1. Define species metadata
+# ============================================================
+
+T2T <- c(
+  "Taeniopygia_guttata"
+)
+
+
+species_orders <- tibble::tribble(
+  ~Species,                     ~Order,
+  "Aegotheles_albertisi",       "Aegotheliformes",
+  "Anas_platyrhynchos",         "Anseriformes",
+  "Aythya_ferina",              "Anseriformes",
+  "Aythya_marila",              "Anseriformes",
+  "Calonectris_borealis",       "Procellariiformes",
+  "Coloeus_monedula",           "Passeriformes",
+  "Columba_livia",              "Columbiformes",
+  "Cyanocitta_cristata",        "Passeriformes",
+  "Cygnus_columbianus",         "Anseriformes",
+  "Dixiphia_pipra",             "Passeriformes",
+  "Heliangelus_exortis",        "Apodiformes",
+  "Larus_argentatus",           "Charadriiformes",
+  "Lathamus_discolor",          "Psittaciformes",
+  "Mergus_octosetaceus",        "Anseriformes",
+  "Morphnus_guianensis",        "Accipitriformes",
+  "Numenius_arquata",           "Charadriiformes",
+  "Opisthocomus_hoazin",        "Opisthocomiformes",
+  "Passer_domesticus",          "Passeriformes",
+  "Patagioenas_fasciata",       "Columbiformes",
+  "Platalea_leucorodia",        "Pelecaniformes",
+  "Phaethon_aethereus",         "Phaethontiformes",
+  "Rissa_tridactyla",           "Charadriiformes",
+  "Sarcoramphus_papa",          "Cathartiformes",
+  "Strix_aluco",                "Strigiformes",
+  "Struthio_camelus_australis",           "Struthioniformes",
+  "Taeniopygia_guttata",        "Passeriformes",
+  "Zosterops_lateralis",        "Passeriformes",
+  "Poecile_atricapillus",       "Passeriformes",
+  "Amazona_ochrocephala",       "Psittaciformes",
+  "Anser_anser",                "Anseriformes",
+  "Eudromia_elegans",           "Tinamiformes",
+  "Dromaius_novaehollandiae",   "Casuariiformes"
+)
+
+# ============================================================
+# Common plotting aesthetics
+# ============================================================
+
+# ============================================================
+# Point shapes
+# ============================================================
+
+# Fillable shapes:
+# circle   = Non-T2T
+# triangle = T2T
+point_shapes <- c(
+  "Non-T2T" = 21,
+  "T2T"     = 24
+)
+
+
+# ============================================================
+# 1. Build ONE all-bird dataset
 # ============================================================
 
 par_gene_counts <- df %>%
-  filter(Gene %in% genes_in_PAR_any_species) %>%
-  filter(In_PAR %in% c("Y", "Edge")) %>%
-  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
+  filter(
+    Gene %in% genes_in_PAR_any_species,
+    In_PAR %in% c("Y", "Edge"),
+    !str_detect(Gene, regex("array", ignore_case = TRUE))
+  ) %>%
   distinct(Species, Gene) %>%
   count(Species, name = "par_gene_count")
 
 
-# Calculate PAR size
-species_par <- species_par %>%
-  mutate(
-    par_size_bp = PARStop - PARStart,
-    par_size_Mb = par_size_bp / 1e6
-  )
-
-
-# ============================================================
-# Build PGLS dataset
-# ============================================================
-
-pgls_data <- species_par %>%
-  select(Species, par_size_Mb) %>%
+model_data <- species_par %>%
+  transmute(
+    Species,
+    par_size_Mb = (PARStop - PARStart) / 1e6
+  ) %>%
   left_join(par_gene_counts, by = "Species") %>%
   mutate(
-    # Use zero only when a species genuinely has no PAR genes.
-    # If missing means "not assessed", do not replace with zero.
     par_gene_count = replace_na(par_gene_count, 0L)
   ) %>%
   filter(
@@ -1322,411 +917,676 @@ pgls_data <- species_par %>%
     is.finite(par_gene_count),
     par_gene_count > 0
   ) %>%
-  distinct(Species, .keep_all = TRUE) %>%
-  mutate(
-    # Natural-log transformations
-    log_par_size = log(par_size_Mb),
-
-    # log1p(x) = log(x + 1), allowing gene counts of zero
-    log_par_gene_count = log1p(par_gene_count)
-  )
+  distinct(Species, .keep_all = TRUE)
 
 
 # ============================================================
-# Match the regression data and tree
+# 2. Match all-bird dataset to phylogeny
 # ============================================================
 
 species_for_model <- intersect(
   tree_filtered$tip.label,
-  pgls_data$Species
+  model_data$Species
 )
 
-pgls_tree <- keep.tip(
+model_tree <- keep.tip(
   tree_filtered,
   species_for_model
 )
 
-pgls_data <- pgls_data %>%
-  filter(Species %in% pgls_tree$tip.label) %>%
-  arrange(match(Species, pgls_tree$tip.label))
+model_data <- model_data %>%
+  filter(Species %in% model_tree$tip.label) %>%
+  arrange(match(Species, model_tree$tip.label))
 
-
-# Confirm exact matching and ordering
 stopifnot(
   identical(
-    as.character(pgls_data$Species),
-    pgls_tree$tip.label
+    as.character(model_data$Species),
+    model_tree$tip.label
   )
 )
 
-
-# ============================================================
-# Phylogenetically independent contrasts
-# ============================================================
-
-# PIC requires named trait vectors
-gene_trait <- setNames(
-  pgls_data$log_par_gene_count,
-  pgls_data$Species
-)
-
-parsize_trait <- setNames(
-  pgls_data$log_par_size,
-  pgls_data$Species
-)
-
-genePic <- pic(
-  gene_trait,
-  pgls_tree
-)
-
-parsizePic <- pic(
-  parsize_trait,
-  pgls_tree
-)
-
-
-# PIC regression is forced through the origin
-picModel <- lm(
-  genePic ~ parsizePic - 1
-)
-
-summary(picModel)
+model_data <- as.data.frame(model_data)
+rownames(model_data) <- model_data$Species
 
 
 # ============================================================
-# PGLS with Pagel's lambda
+# 3. ALL BIRDS -- lm
 # ============================================================
 
-# nlme uses row names to associate observations with tree tips
-pgls_data <- as.data.frame(pgls_data)
-rownames(pgls_data) <- pgls_data$Species
+lm_all <- lm(
+  par_size_Mb ~ par_gene_count,
+  data = model_data
+)
+
+summary(lm_all)
 
 
-# Pagel's lambda correlation structure
-lambda_cor <- corPagel(
-  value = 0.5,
-  phy = pgls_tree,
-  fixed = FALSE,
-  form = ~ Species
+# ============================================================
+# 4. ALL BIRDS -- PGLS
+# ============================================================
+
+pgls_all <- phylolm(
+  par_size_Mb ~ par_gene_count,
+  data = model_data,
+  phy = model_tree,
+  model = "lambda"
+)
+
+summary(pgls_all)
+
+# Estimated Pagel's lambda
+pgls_all$optpar
+
+
+# ============================================================
+# 5. Plot -- lm, all birds
+# ============================================================
+# ============================================================
+# Bird Order plotting aesthetics
+# ============================================================
+
+# Species with no PAR
+no_par_species <- c(
+  "Colius_striatus",
+  "Falco_naumanni"
 )
 
 
-# Fit model using log-transformed variables
-pgls_fit <- gls(
-  log_par_gene_count ~ log_par_size,
-  data = pgls_data,
-  correlation = lambda_cor,
-  method = "ML"
+# ============================================================
+# 1. Add taxonomic Order FIRST
+# ============================================================
+
+model_data <- model_data %>%
+  select(-any_of("Order")) %>%
+  left_join(
+    species_orders,
+    by = "Species"
+  )
+
+# ============================================================
+# 2. Remove species with no PAR
+# ============================================================
+
+model_data <- model_data %>%
+  filter(!Species %in% no_par_species)
+
+model_data <- model_data %>%
+  mutate(
+    T2T_status = if_else(
+      Species %in% T2T,
+      "T2T",
+      "Non-T2T"
+    )
+  )
+
+# ============================================================
+# 3. Check that every remaining species has an Order
+# ============================================================
+
+model_data %>%
+  filter(is.na(Order)) %>%
+  select(Species)
+
+# ============================================================
+# 4. Define Order levels from the remaining ALL-BIRD dataset
+# ============================================================
+
+bird_order_levels <- model_data %>%
+  distinct(Order) %>%
+  filter(!is.na(Order)) %>%
+  arrange(Order) %>%
+  pull(Order) %>%
+  as.character()
+
+
+# ============================================================
+# 5. Set identical factor levels in both datasets
+# ============================================================
+
+model_data <- model_data %>%
+  mutate(
+    Order = factor(
+      Order,
+      levels = bird_order_levels
+    )
+  )
+
+
+# ============================================================
+# 6. Color-blind-friendly Order colors
+# ============================================================
+
+bird_order_colors <- setNames(
+  viridisLite::viridis(
+    length(bird_order_levels),
+    option = "D",
+    begin = 0.05,
+    end = 0.95
+  ),
+  bird_order_levels
 )
 
-summary(pgls_fit)
-intervals(pgls_fit)
+
+# ============================================================
+# 7. Alternate filled/open circles
+# ============================================================
+
+bird_order_shapes <- setNames(
+  rep(
+    c(16, 1),
+    length.out = length(bird_order_levels)
+  ),
+  bird_order_levels
+)
+
+
+bird_order_fills <- bird_order_colors
+
+# Every second Order is open
+bird_order_fills[seq(2, length(bird_order_fills), by = 2)] <- "white"
+
+# ============================================================
+# 8. Sanity checks
+# ============================================================
+
+table(model_data$Order, useNA = "ifany")
 
 
 # ============================================================
-# Plot log-transformed PAR size vs log-transformed gene count
+# 5. Plot -- LM, all birds
 # ============================================================
 
-p_all <- ggplot(
-  pgls_data,
+p_lm_all <- ggplot(
+  model_data,
   aes(
-    x = log_par_size,
-    y = log_par_gene_count,
-    label = Species
+    x = par_gene_count,
+    y = par_size_Mb
   )
 ) +
-  geom_point(size = 3) +
+  geom_point(
+    aes(
+      color = Order,
+      fill = Order,
+      shape = T2T_status
+    ),
+    size = 4,
+    stroke = 1.2
+  ) +
+    
+  scale_color_manual(
+    values = bird_order_colors,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_fill_manual(
+    values = bird_order_fills,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
   geom_smooth(
     method = "lm",
     formula = y ~ x,
-    se = TRUE
+    se = TRUE,
+    color = "black",
+    linewidth = 0.8
   ) +
-  geom_text(
-    nudge_y = 0.05,
-    size = 3
+
+  geom_text_repel(
+    aes(label = Species),
+    size = 3,
+    color = "black",
+    show.legend = FALSE
   ) +
+
+  scale_color_manual(
+    values = bird_order_colors,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
   labs(
-    x = "log(PAR size [Mb])",
-    y = "log(PAR gene count + 1)"
+    title = "Ordinary linear model",
+    x = "Number of genes in the PAR",
+    y = "PAR size (Mb)",
+    color = "Order",
+    shape = "Assembly"
   ) +
-  theme_bw()
 
-ggsave(
-  "PGLS.AllBirds.logTransformed.png",
-  p_all
-)
+  guides(
+    color = guide_legend(
+      override.aes = list(
+        size = 4,
+        shape = bird_order_shapes
+      )
+    ),
+    shape = "none"
+  ) +
 
-
-# ============================================================
-# Plot PGLS residuals
-# ============================================================
-
-pgls_data$residual <- residuals(
-  pgls_fit,
-  type = "normalized"
-)
-
-pgls_data <- pgls_data %>%
-  mutate(
-    outlier = abs(residual) > 2
+  theme_bw() +
+  theme(
+    legend.position = "right",
+    legend.key.height = unit(0.45, "cm"),
+    legend.text = element_text(size = 8)
   )
 
 
-p_residuals <- ggplot(
-  pgls_data,
+
+
+
+# ============================================================
+# Plot -- PGLS residuals, all birds
+# ============================================================
+
+# Add all-bird PGLS residuals
+model_data$pgls_resid <- residuals(
+  pgls_all
+)
+
+p_pgls_resid_all <- ggplot(
+  model_data,
   aes(
-    x = log_par_size,
-    y = residual
+    x = par_gene_count,
+    y = pgls_resid
   )
 ) +
+
   geom_hline(
     yintercept = 0,
-    linetype = "dashed"
+    linetype = "dashed",
+    color = "black",
+    linewidth = 0.7
   ) +
-  geom_hline(
-    yintercept = c(-2, 2),
-    linetype = "dotted"
-  ) +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(
-      pgls_data,
-      abs(residual) > 2
+
+  geom_point(
+    aes(
+      color = Order,
+      fill = Order,
+      shape = T2T_status
     ),
+    size = 4,
+    stroke = 1.2
+  ) +
+
+  scale_color_manual(
+    values = bird_order_colors,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_fill_manual(
+    values = bird_order_fills,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
+  geom_text_repel(
     aes(label = Species),
-    size = 3
+    size = 3,
+    color = "black",
+    show.legend = FALSE
   ) +
+
+  scale_color_manual(
+    values = bird_order_colors,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
   labs(
-    x = "log(PAR size [Mb])",
-    y = "Normalized PGLS residual"
+    title = paste0(
+      "PGLS residuals: All birds; lambda = ",
+      round(pgls_all$optpar, 2)
+    ),
+    x = "Number of genes in the PAR",
+    y = "PGLS residual",
+    color = "Order",
+    shape = "Assembly"
   ) +
+
   theme_bw()
 
-ggsave(
-  "PGLS.residuals.AllBirds.logTransformed.png",
-  p_residuals
-)
+
+
 
 
 
 # ============================================================
-# Remove ratites and redo
+# 7. Remove ratites
+#
+# This reproduces your existing bird analysis, which used
+# PAR size < 14 Mb to define the reduced dataset.
 # ============================================================
 
-pgls_data <- species_par %>%
-  select(Species, par_size_Mb) %>%
-  left_join(par_gene_counts, by = "Species") %>%
-  mutate(
-    # Use zero only when a species genuinely has no PAR genes.
-    # If missing means "not assessed", do not replace with zero.
-    par_gene_count = replace_na(par_gene_count, 0L)
-  ) %>%
-  filter(
-    is.finite(par_size_Mb),
-    par_size_Mb < 14,
-    is.finite(par_gene_count),
-    par_gene_count > 0
-  ) %>%
-  distinct(Species, .keep_all = TRUE) %>%
-  mutate(
-    log_par_size = log(par_size_Mb),
-    log_par_gene_count = log1p(par_gene_count)
+model_data_reduced <- model_data %>%
+  filter(par_size_Mb < 14)
+
+
+model_data_reduced <- model_data_reduced %>%
+  select(-any_of("Order")) %>%
+  left_join(
+    species_orders,
+    by = "Species"
   )
 
 
+model_data_reduced <- model_data_reduced %>%
+  filter(!Species %in% no_par_species)
+
+
+model_data_reduced <- model_data_reduced %>%
+  mutate(
+    T2T_status = if_else(
+      Species %in% T2T,
+      "T2T",
+      "Non-T2T"
+    )
+  )
+
+
+model_data_reduced %>%
+  filter(is.na(Order)) %>%
+  select(Species)
+
+
+model_data_reduced <- model_data_reduced %>%
+  mutate(
+    Order = factor(
+      Order,
+      levels = bird_order_levels
+    )
+  )
+table(model_data_reduced$Order, useNA = "ifany")
+
 # ============================================================
-# Match the reduced dataset and tree
+# 8. Re-match reduced dataset to phylogeny
 # ============================================================
 
-species_for_model <- intersect(
+species_for_model_reduced <- intersect(
   tree_filtered$tip.label,
-  pgls_data$Species
+  model_data_reduced$Species
 )
 
-pgls_tree <- keep.tip(
+model_tree_reduced <- keep.tip(
   tree_filtered,
-  species_for_model
+  species_for_model_reduced
 )
 
-pgls_data <- pgls_data %>%
-  filter(Species %in% pgls_tree$tip.label) %>%
-  arrange(match(Species, pgls_tree$tip.label))
+model_data_reduced <- model_data_reduced %>%
+  filter(Species %in% model_tree_reduced$tip.label) %>%
+  arrange(match(Species, model_tree_reduced$tip.label))
 
-
-# Confirm exact matching and ordering
 stopifnot(
   identical(
-    as.character(pgls_data$Species),
-    pgls_tree$tip.label
+    as.character(model_data_reduced$Species),
+    model_tree_reduced$tip.label
   )
 )
 
-
-# ============================================================
-# PIC analysis
-# ============================================================
-
-gene_trait <- setNames(
-  pgls_data$log_par_gene_count,
-  pgls_data$Species
-)
-
-parsize_trait <- setNames(
-  pgls_data$log_par_size,
-  pgls_data$Species
-)
-
-genePic <- pic(
-  gene_trait,
-  pgls_tree
-)
-
-parsizePic <- pic(
-  parsize_trait,
-  pgls_tree
-)
-
-
-picModel <- lm(
-  genePic ~ parsizePic - 1
-)
-
-summary(picModel)
+model_data_reduced <- as.data.frame(model_data_reduced)
+rownames(model_data_reduced) <- model_data_reduced$Species
 
 
 # ============================================================
-# PGLS
+# 9. NO RATITES -- lm
 # ============================================================
 
-pgls_data <- as.data.frame(pgls_data)
-rownames(pgls_data) <- pgls_data$Species
-
-
-# Estimate Pagel's lambda
-lambda_cor <- corPagel(
-  value = 0.5,
-  phy = pgls_tree,
-  fixed = FALSE,
-  form = ~ Species
+lm_no_ratites <- lm(
+  par_size_Mb ~ par_gene_count,
+  data = model_data_reduced
 )
 
-pgls_fit <- gls(
-  log_par_gene_count ~ log_par_size,
-  data = pgls_data,
-  correlation = lambda_cor,
-  method = "ML"
+summary(lm_no_ratites)
+
+
+# ============================================================
+# 10. NO RATITES -- PGLS
+# ============================================================
+
+pgls_no_ratites <- phylolm(
+  par_size_Mb ~ par_gene_count,
+  data = model_data_reduced,
+  phy = model_tree_reduced,
+  model = "lambda"
 )
 
-summary(pgls_fit)
-intervals(pgls_fit)
+summary(pgls_no_ratites)
+
+# Estimated Pagel's lambda
+pgls_no_ratites$optpar
 
 
 # ============================================================
-# Fit model with lambda fixed at 1
+# Add PGLS residuals to model_data_reduced
 # ============================================================
 
-lambda1_cor <- corPagel(
-  value = 1,
-  phy = pgls_tree,
-  fixed = TRUE,
-  form = ~ Species
+model_data_reduced$pgls_resid <- residuals(
+  pgls_no_ratites
 )
 
-pgls_fit_lambda1 <- gls(
-  log_par_gene_count ~ log_par_size,
-  data = pgls_data,
-  correlation = lambda1_cor,
-  method = "ML"
-)
-
-summary(pgls_fit_lambda1)
-
 
 # ============================================================
-# Plot reduced dataset
+# 11. Plot -- LM, ratites removed
 # ============================================================
 
-p_no_ratites <- ggplot(
-  pgls_data,
+p_lm_no_ratites <- ggplot(
+  model_data_reduced,
   aes(
-    x = log_par_size,
-    y = log_par_gene_count,
-    label = Species
+    x = par_gene_count,
+    y = par_size_Mb
   )
 ) +
-  geom_point(size = 3) +
+  geom_point(
+    aes(
+      color = Order,
+      fill = Order,
+      shape = T2T_status
+    ),
+    size = 4,
+    stroke = 1.2
+  ) +
+
+  scale_color_manual(
+    values = bird_order_colors,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_fill_manual(
+    values = bird_order_fills,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
   geom_smooth(
     method = "lm",
     formula = y ~ x,
-    se = TRUE
+    se = TRUE,
+    color = "black",
+    linewidth = 0.8
   ) +
-  geom_text(
-    nudge_y = 0.05,
-    size = 3
+
+  geom_text_repel(
+    aes(label = Species),
+    size = 3,
+    color = "black",
+    show.legend = FALSE
   ) +
+
+  scale_color_manual(
+    values = bird_order_colors,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
   labs(
-    x = "log(PAR size [Mb])",
-    y = "log(PAR gene count + 1)"
+    title = "LM: Ratites removed",
+    x = "Number of genes in the PAR",
+    y = "PAR size (Mb)",
+    color = "Order",
+    shape = "Assembly"
   ) +
+
   theme_bw()
 
-ggsave(
-  "PGLS.AllBirds.noRatites.logTransformed.png",
-  p_no_ratites
-)
 
 
 # ============================================================
-# Plot residuals
+# 12. Plot -- PGLS residuals, ratites removed
 # ============================================================
 
-# Use residuals from the estimated-lambda model.
-# Change pgls_fit to pgls_fit_lambda1 below if you specifically
-# want diagnostics for the lambda = 1 model.
-
-pgls_data$residual <- residuals(
-  pgls_fit,
-  type = "normalized"
-)
-
-pgls_data <- pgls_data %>%
-  mutate(
-    outlier = abs(residual) > 2
-  )
-
-
-p_residuals <- ggplot(
-  pgls_data,
+p_pgls_resid_no_ratites <- ggplot(
+  model_data_reduced,
   aes(
-    x = log_par_size,
-    y = residual
+    x = par_gene_count,
+    y = pgls_resid
   )
 ) +
+
+  # Expected residual = 0
   geom_hline(
     yintercept = 0,
-    linetype = "dashed"
+    linetype = "dashed",
+    color = "black",
+    linewidth = 0.7
   ) +
-  geom_hline(
-    yintercept = c(-2, 2),
-    linetype = "dotted"
-  ) +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(
-      pgls_data,
-      abs(residual) > 2
+
+  geom_point(
+    aes(
+      color = Order,
+      fill = Order,
+      shape = T2T_status
     ),
+    size = 4,
+    stroke = 1.2
+  ) +
+
+  scale_color_manual(
+    values = bird_order_colors,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_fill_manual(
+    values = bird_order_fills,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
+  geom_text_repel(
     aes(label = Species),
-    size = 3
+    size = 3,
+    color = "black",
+    show.legend = FALSE
   ) +
+
+  scale_color_manual(
+    values = bird_order_colors,
+    limits = bird_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
   labs(
-    x = "log(PAR size [Mb])",
-    y = "Normalized PGLS residual"
+    title = paste0(
+      "PGLS residuals: Ratites removed; lambda = ",
+      round(pgls_no_ratites$optpar, 2)
+    ),
+    x = "Number of genes in the PAR",
+    y = "PGLS residual",
+    color = "Order",
+    shape = "Assembly"
   ) +
+
   theme_bw()
 
+
+# ============================================================
+# 13. Save plots
+# ============================================================
+
 ggsave(
-  "PGLS.residuals.AllBirds.noRatites.logTransformed.png",
-  p_residuals
+  "lm.AllBirds.pdf",
+  p_lm_all,
+  width = 8,
+  height = 6
+)
+
+ggsave(
+  "PGLS.residuals.AllBirds.pdf",
+  p_pgls_resid_all,
+  width = 8,
+  height = 6
+)
+
+ggsave(
+  "lm.noRatites.pdf",
+  p_lm_no_ratites,
+  width = 8,
+  height = 6
+)
+
+ggsave(
+  "PGLS.residuals.noRatites.pdf",
+  p_pgls_resid_no_ratites,
+  width = 8,
+  height = 6
+)
+
+
+
+# ============================================================
+# Write model summaries to text files
+# ============================================================
+
+capture.output(
+  summary(lm_all),
+  file = "LM.AllBirds.summary.txt"
+)
+
+capture.output(
+  summary(pgls_all),
+  file = "PGLS.AllBirds.summary.txt"
+)
+
+capture.output(
+  summary(lm_no_ratites),
+  file = "LM.ReducedBirds.summary.txt"
+)
+
+capture.output(
+  summary(pgls_no_ratites),
+  file = "PGLS.ReducedBirds.summary.txt"
 )

@@ -213,7 +213,8 @@ wget -c -r -l 1 -np -nH --cut-dirs=4 \
 wget -c -r -l 1 -np -nH --cut-dirs=4 \
   --reject "index.html*" \
   --accept "query_annotation*" \
-	"https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/	Corynorhinus_townsendii__Townsends_big-eared_bat__HLcorTow1A__GCA_026230055.1/"
+	"https://genome.senckenberg.de/download/TOGA2/TOGA2/reference_human_hg38/		Corynorhinus_townsendii__Townsends_big-eared_bat__HLcorTown2A__GCA_026230055.2/"
+
 
 ### Remove directories of unused mammalian accessions 
 ```

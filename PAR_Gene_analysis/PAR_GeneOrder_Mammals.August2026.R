@@ -147,12 +147,13 @@ tree_filtered <- keep.tip(
   intersect(tree$tip.label, species_cols)
 )
 
-tree_filtered <- ape::rotate(tree_filtered, node = 34)
-tree_filtered <- ape::rotate(tree_filtered, node = 56)
-tree_filtered <- ape::rotate(tree_filtered, node = 57)
-tree_filtered <- ape::rotate(tree_filtered, node = 58)
-tree_filtered <- ape::rotate(tree_filtered, node = 59)
-tree_filtered <- ape::rotate(tree_filtered, node = 60)
+tree_filtered <- ape::rotate(tree_filtered, node = 42)
+tree_filtered <- ape::rotate(tree_filtered, node = 71)
+tree_filtered <- ape::rotate(tree_filtered, node = 72)
+tree_filtered <- ape::rotate(tree_filtered, node = 73)
+tree_filtered <- ape::rotate(tree_filtered, node = 74)
+tree_filtered <- ape::rotate(tree_filtered, node = 75)
+
 
 p_tree_tmp <- ggtree(tree_filtered, ladderize = FALSE)
 
@@ -853,385 +854,23 @@ ggsave(
 
 
 
-
-
-
-
-
-
-
-
-
 # ============================================================
-# Test for relationship between base pair size and gene count
-# ============================================================
-
-library(dplyr)
-library(ape)
-library(nlme)
-
-# ============================================================
-# Build species-level data for PGLS
-# ============================================================
-
-par_gene_counts <- df %>%
-  filter(Gene %in% genes_in_PAR_any_species) %>%
-  filter(In_PAR %in% c("Y", "Edge")) %>%
-  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
-  distinct(Species, Gene) %>%
-  count(Species, name = "par_gene_count")
-
-species_par$par_size_bp <- species_par$PARStop - species_par$PARStart
-
-species_par <- species_par %>%
-  mutate(
-    par_size_Mb = par_size_bp / 1e6
-  )
-
-pgls_data <- species_par %>%
-  select(Species, par_size_Mb) %>%
-  left_join(par_gene_counts, by = "Species") %>%
-  mutate(
-    # Use zero only when a species genuinely has no PAR genes.
-    # If missing means "not assessed", do not replace with zero.
-    par_gene_count = replace_na(par_gene_count, 0L)
-  ) %>%
-  filter(
-    is.finite(par_size_Mb),
-    par_size_Mb > 1,
-    is.finite(par_gene_count)
-  ) %>%
-  distinct(Species, .keep_all = TRUE)
-
-
-# Calculate PICs
-genePic <- pic(pgls_data$par_gene_count, tree_filtered)
-parsizePic <- pic(pgls_data$par_size_Mb, tree_filtered)
-
-# Make a model
-picModel <- lm(genePic ~ parsizePic - 1)
-
-# Yes, significant
-summary(picModel)
-
-
-
-
-
-# ============================================================
-# Match the regression data and tree
-# ============================================================
-
-species_for_model <- intersect(
-  tree_filtered$tip.label,
-  pgls_data$Species
-)
-
-pgls_tree <- keep.tip(
-  tree_filtered,
-  species_for_model
-)
-
-pgls_data <- pgls_data %>%
-  filter(Species %in% pgls_tree$tip.label) %>%
-  arrange(match(Species, pgls_tree$tip.label))
-
-# Confirm exact matching and ordering
-stopifnot(identical(
-  as.character(pgls_data$Species),
-  pgls_tree$tip.label
-))
-
-# nlme uses row names to associate observations with tree tips
-pgls_data <- as.data.frame(pgls_data)
-rownames(pgls_data) <- pgls_data$Species
-
-# Pagel's lambda correlation structure
-lambda_cor <- corPagel(
-  value = 0.5,
-  phy = pgls_tree,
-  fixed = FALSE,
-  form = ~ Species
-)
-
-pgls_fit <- gls(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data,
-  correlation = lambda_cor,
-  method = "ML"
-)
-
-summary(pgls_fit)
-intervals(pgls_fit)
-
-
-
-ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = par_gene_count,
-    label = Species
-  )
-) +
-  geom_point(size = 3) +
-  geom_smooth(
-    method = "lm",
-    formula = y ~ x,
-    se = TRUE
-  ) +
-  geom_text(
-    nudge_y = 0.5,
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Number of genes in the PAR"
-  ) +
-  theme_bw()
-
-ggsave("PGLS.AllMammals.png")
-
-# Plot residuals
-library(ggrepel)
-
-# Add model residuals to the data
-pgls_data$residual <- residuals(pgls_fit, type = "normalized")
-
-# Choose outliers, e.g. |normalized residual| > 2
-pgls_data <- pgls_data %>%
-  mutate(
-    outlier = abs(residual) > 2
-  )
-
-pgls_data$residual <- residuals(pgls_fit, type = "normalized")
-
-p_residuals <- ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = residual
-  )
-) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = c(-2, 2), linetype = "dotted") +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(pgls_data, abs(residual) > 2),
-    aes(label = Species),
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Normalized PGLS residual"
-  ) +
-  theme_bw()
-
-ggsave("PGLS.residuals.AllMammals.png", p_residuals)
-
-
-
-# ============================================================
-# Remove rodents and redo
-# ============================================================
-
-
-pgls_data <- species_par %>%
-  select(Species, par_size_Mb) %>%
-  left_join(par_gene_counts, by = "Species") %>%
-  mutate(
-    # Use zero only when a species genuinely has no PAR genes.
-    # If missing means "not assessed", do not replace with zero.
-    par_gene_count = replace_na(par_gene_count, 0L)
-  ) %>%
-  filter(
-    is.finite(par_size_Mb),
-    par_size_Mb > 1,
-    par_gene_count < 40,
-    is.finite(par_gene_count)
-  ) %>%
-  distinct(Species, .keep_all = TRUE)
-
-# Calculate PICs
-genePic <- pic(pgls_data$par_gene_count, tree_filtered)
-parsizePic <- pic(pgls_data$par_size_Mb, tree_filtered)
-
-# Make a model
-picModel <- lm(genePic ~ parsizePic - 1)
-
-# Yes, significant
-summary(picModel)
-
-
-
-
-
-# ============================================================
-# Match the regression data and tree
-# ============================================================
-
-species_for_model <- intersect(
-  tree_filtered$tip.label,
-  pgls_data$Species
-)
-
-pgls_tree <- keep.tip(
-  tree_filtered,
-  species_for_model
-)
-
-pgls_data <- pgls_data %>%
-  filter(Species %in% pgls_tree$tip.label) %>%
-  arrange(match(Species, pgls_tree$tip.label))
-
-# Confirm exact matching and ordering
-stopifnot(identical(
-  as.character(pgls_data$Species),
-  pgls_tree$tip.label
-))
-
-# nlme uses row names to associate observations with tree tips
-pgls_data <- as.data.frame(pgls_data)
-rownames(pgls_data) <- pgls_data$Species
-
-# Pagel's lambda correlation structure
-lambda_cor <- corPagel(
-  value = 0.5,
-  phy = pgls_tree,
-  fixed = FALSE,
-  form = ~ Species
-)
-
-pgls_fit <- gls(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data,
-  correlation = lambda_cor,
-  method = "ML"
-)
-
-summary(pgls_fit)
-intervals(pgls_fit)
-
-# Fit with lambda fixed at 1 -- there is too much phylogenetic dependence for the model to converge
-lambda1_cor <- corPagel(
-  value = 1,
-  phy = pgls_tree,
-  fixed = TRUE,
-  form = ~ Species
-)
-
-pgls_fit <- gls(
-  par_gene_count ~ par_size_Mb,
-  data = pgls_data,
-  correlation = lambda1_cor,
-  method = "ML"
-)
-
-summary(pgls_fit)
-
-ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = par_gene_count,
-    label = Species
-  )
-) +
-  geom_point(size = 3) +
-  geom_smooth(
-    method = "lm",
-    formula = y ~ x,
-    se = TRUE
-  ) +
-  geom_text(
-    nudge_y = 0.5,
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Number of genes in the PAR"
-  ) +
-  theme_bw()
-
-ggsave("PGLS.AllMammals.noRodents.png")
-
-# Plot residuals
-library(ggrepel)
-
-# Add model residuals to the data
-pgls_data$residual <- residuals(pgls_fit, type = "normalized")
-
-# Choose outliers, e.g. |normalized residual| > 2
-pgls_data <- pgls_data %>%
-  mutate(
-    outlier = abs(residual) > 2
-  )
-
-pgls_data$residual <- residuals(pgls_fit, type = "normalized")
-
-p_residuals <- ggplot(
-  pgls_data,
-  aes(
-    x = par_size_Mb,
-    y = residual
-  )
-) +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = c(-2, 2), linetype = "dotted") +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(pgls_data, abs(residual) > 2),
-    aes(label = Species),
-    size = 3
-  ) +
-  labs(
-    x = "PAR size",
-    y = "Normalized PGLS residual"
-  ) +
-  theme_bw()
-
-ggsave("PGLS.residuals.AllMammals.noRodents.png", p_residuals)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# ============================================================
-# Test for relationship between PAR size and gene count
-# Using log-transformed PAR gene counts and PAR sizes
+# PAR size vs PAR gene count
+# ALL MAMMALS -- ONE DATASET
+#
+# Color = taxonomic Order
+# Shape = T2T status
+#   triangle = T2T
+#   circle   = non-T2T
+#
+# Models:
+#   1. Ordinary LM
+#   2. PGLS with estimated Pagel's lambda
 # ============================================================
 
 library(dplyr)
-library(stringr)
 library(tidyr)
+library(stringr)
 library(ape)
 library(nlme)
 library(ggplot2)
@@ -1239,447 +878,902 @@ library(ggrepel)
 
 
 # ============================================================
-# Build species-level data
+# 1. Define species metadata
+# ============================================================
+
+T2T <- c(
+  "Gorilla_gorilla",
+  "Pan_paniscus",
+  "Pan_troglodytes",
+  "Pongo_abelii",
+  "Pongo_pygmaeus",
+  "Symphalangus_syndactylus",
+  "Ovis_canadensis",
+  "Ovis_aries",
+  "Capra_hircus",
+  "Callithrix_jacchus"
+)
+
+
+species_orders <- tibble::tribble(
+  ~Species,                     ~Order,
+  "Balaenoptera_physalus",      "Cetartiodactyla",
+  "Bos_taurus",                 "Cetartiodactyla",
+  "Callithrix_jacchus",         "Primates",
+  "Camelus_dromedarius",        "Cetartiodactyla",
+  "Capra_hircus",               "Cetartiodactyla",
+  "Eubalaena_glacialis",        "Cetartiodactyla",
+  "Gorilla_gorilla",            "Primates",
+  "Grampus_griseus",            "Cetartiodactyla",
+  "Homo_sapiens",               "Primates",
+  "Inia_geoffrensis",           "Cetartiodactyla",
+  "Loxodonta_africana",         "Proboscidea",
+  "Lycaon_pictus",              "Carnivora",
+  "Macaca_nemestrina",          "Primates",
+  "Manis_pentadactyla",         "Pholidota",
+  "Marmota_flaviventris",       "Rodentia",
+  "Meles_meles",                "Carnivora",
+  "Mesoplodon_bidens",          "Cetartiodactyla",
+  "Molossus_nigricans",         "Chiroptera",
+  "Mustela_nivalis_vulgaris",   "Carnivora",
+  "Myotis_nattereri",           "Chiroptera",
+  "Ovis_aries",                 "Cetartiodactyla",
+  "Ovis_canadensis",            "Cetartiodactyla",
+  "Pan_paniscus",               "Primates",
+  "Pan_troglodytes",            "Primates",
+  "Panthera_onca",              "Carnivora",
+  "Pongo_abelii",               "Primates",
+  "Pongo_pygmaeus",             "Primates",
+  "Pseudorca_crassidens",       "Cetartiodactyla",
+  "Rhynchocyon_petersi",        "Macroscelidea",
+  "Rhynchonycteris_naso",       "Chiroptera",
+  "Symphalangus_syndactylus",   "Primates",
+  "Trichechus_inunguis",        "Sirenia",
+  "Urocitellus_parryii",        "Rodentia",
+  "Canis_lupus_baileyi",        "Carnivora",
+  "Nyctalus_leisleri",          "Chiroptera",
+  "Dasypus_novemcinctus",       "Cingulata",
+  "Artibeus_intermedius",       "Chiroptera",
+  "Artibeus_lituratus",         "Chiroptera",
+  "Myotis_mystacinus",          "Chiroptera",
+  "Corynorhinus_townsendii",    "Chiroptera",
+  "Miniopterus_schreibersii",   "Chiroptera"
+)
+
+
+# ============================================================
+# Common plotting aesthetics
+# ============================================================
+
+point_shapes <- c(
+  "Non-T2T" = 21,  # fillable circle
+  "T2T"     = 24   # fillable triangle
+)
+
+# Fixed Order levels
+order_levels <- c(
+  "Cetartiodactyla",
+  "Primates",
+  "Carnivora",
+  "Chiroptera",
+  "Rodentia",
+  "Proboscidea",
+  "Pholidota",
+  "Macroscelidea",
+  "Sirenia",
+  "Cingulata"
+)
+
+
+# ============================================================
+# 2. Build ONE all-mammal dataset
 # ============================================================
 
 par_gene_counts <- df %>%
-  filter(Gene %in% genes_in_PAR_any_species) %>%
-  filter(In_PAR %in% c("Y", "Edge")) %>%
-  filter(!str_detect(Gene, regex("array", ignore_case = TRUE))) %>%
+  filter(
+    Gene %in% genes_in_PAR_any_species,
+    In_PAR %in% c("Y", "Edge"),
+    !str_detect(Gene, regex("array", ignore_case = TRUE))
+  ) %>%
   distinct(Species, Gene) %>%
   count(Species, name = "par_gene_count")
 
 
-# Calculate PAR size
-species_par <- species_par %>%
-  mutate(
+model_data <- species_par %>%
+  transmute(
+    Species,
     par_size_bp = PARStop - PARStart,
-    par_size_Mb = par_size_bp / 1e6
-  )
-
-
-# ============================================================
-# Build PGLS dataset
-# ============================================================
-
-pgls_data <- species_par %>%
-  select(Species, par_size_Mb) %>%
+    par_size_Mb = (PARStop - PARStart) / 1e6
+  ) %>%
   left_join(par_gene_counts, by = "Species") %>%
+  left_join(species_orders, by = "Species") %>%
   mutate(
-    # Use zero only when a species genuinely has no PAR genes.
-    # If missing means "not assessed", do not replace with zero.
-    par_gene_count = replace_na(par_gene_count, 0L)
-  ) %>%
-  filter(
-    is.finite(par_size_Mb),
-    par_size_Mb > 1,
-    is.finite(par_gene_count)
-  ) %>%
-  distinct(Species, .keep_all = TRUE) %>%
-  mutate(
-    # Natural-log transformations
-    log_par_size = log(par_size_Mb),
+    par_gene_count = replace_na(par_gene_count, 0L),
 
-    # log1p(x) = log(x + 1), allowing gene counts of zero
-    log_par_gene_count = log1p(par_gene_count)
-  )
-
-
-# ============================================================
-# Match the regression data and tree
-# ============================================================
-
-species_for_model <- intersect(
-  tree_filtered$tip.label,
-  pgls_data$Species
-)
-
-pgls_tree <- keep.tip(
-  tree_filtered,
-  species_for_model
-)
-
-pgls_data <- pgls_data %>%
-  filter(Species %in% pgls_tree$tip.label) %>%
-  arrange(match(Species, pgls_tree$tip.label))
-
-
-# Confirm exact matching and ordering
-stopifnot(
-  identical(
-    as.character(pgls_data$Species),
-    pgls_tree$tip.label
-  )
-)
-
-
-# ============================================================
-# Phylogenetically independent contrasts
-# ============================================================
-
-# PIC requires named trait vectors
-gene_trait <- setNames(
-  pgls_data$log_par_gene_count,
-  pgls_data$Species
-)
-
-parsize_trait <- setNames(
-  pgls_data$log_par_size,
-  pgls_data$Species
-)
-
-genePic <- pic(
-  gene_trait,
-  pgls_tree
-)
-
-parsizePic <- pic(
-  parsize_trait,
-  pgls_tree
-)
-
-
-# PIC regression is forced through the origin
-picModel <- lm(
-  genePic ~ parsizePic - 1
-)
-
-summary(picModel)
-
-
-# ============================================================
-# PGLS with Pagel's lambda
-# ============================================================
-
-# nlme uses row names to associate observations with tree tips
-pgls_data <- as.data.frame(pgls_data)
-rownames(pgls_data) <- pgls_data$Species
-
-
-# Pagel's lambda correlation structure
-lambda_cor <- corPagel(
-  value = 0.5,
-  phy = pgls_tree,
-  fixed = FALSE,
-  form = ~ Species
-)
-
-
-# Fit model using log-transformed variables
-pgls_fit <- gls(
-  log_par_gene_count ~ log_par_size,
-  data = pgls_data,
-  correlation = lambda_cor,
-  method = "ML"
-)
-
-summary(pgls_fit)
-intervals(pgls_fit)
-
-
-# ============================================================
-# Plot log-transformed PAR size vs log-transformed gene count
-# ============================================================
-
-p_all <- ggplot(
-  pgls_data,
-  aes(
-    x = log_par_size,
-    y = log_par_gene_count,
-    label = Species
-  )
-) +
-  geom_point(size = 3) +
-  geom_smooth(
-    method = "lm",
-    formula = y ~ x,
-    se = TRUE
-  ) +
-  geom_text(
-    nudge_y = 0.05,
-    size = 3
-  ) +
-  labs(
-    x = "log(PAR size [Mb])",
-    y = "log(PAR gene count + 1)"
-  ) +
-  theme_bw()
-
-ggsave(
-  "PGLS.AllMammals.logTransformed.png",
-  p_all
-)
-
-
-# ============================================================
-# Plot PGLS residuals
-# ============================================================
-
-pgls_data$residual <- residuals(
-  pgls_fit,
-  type = "normalized"
-)
-
-pgls_data <- pgls_data %>%
-  mutate(
-    outlier = abs(residual) > 2
-  )
-
-
-p_residuals <- ggplot(
-  pgls_data,
-  aes(
-    x = log_par_size,
-    y = residual
-  )
-) +
-  geom_hline(
-    yintercept = 0,
-    linetype = "dashed"
-  ) +
-  geom_hline(
-    yintercept = c(-2, 2),
-    linetype = "dotted"
-  ) +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(
-      pgls_data,
-      abs(residual) > 2
+    T2T_status = if_else(
+      Species %in% T2T,
+      "T2T",
+      "Non-T2T"
     ),
-    aes(label = Species),
-    size = 3
-  ) +
-  labs(
-    x = "log(PAR size [Mb])",
-    y = "Normalized PGLS residual"
-  ) +
-  theme_bw()
 
-ggsave(
-  "PGLS.residuals.AllMammals.logTransformed.png",
-  p_residuals
-)
-
-
-
-# ============================================================
-# Remove rodents / high-gene-count species and redo
-# ============================================================
-
-pgls_data <- species_par %>%
-  select(Species, par_size_Mb) %>%
-  left_join(par_gene_counts, by = "Species") %>%
-  mutate(
-    # Use zero only when a species genuinely has no PAR genes.
-    # If missing means "not assessed", do not replace with zero.
-    par_gene_count = replace_na(par_gene_count, 0L)
+    # Log variables use the SAME species dataset
+    log_par_size = log(par_size_Mb),
+    log_par_gene_count = log1p(par_gene_count)
   ) %>%
   filter(
     is.finite(par_size_Mb),
-    par_size_Mb > 1,
-    par_gene_count < 40,
+    par_size_Mb > 0,
     is.finite(par_gene_count)
   ) %>%
-  distinct(Species, .keep_all = TRUE) %>%
-  mutate(
-    log_par_size = log(par_size_Mb),
-    log_par_gene_count = log1p(par_gene_count)
-  )
+  distinct(Species, .keep_all = TRUE)
 
+
+# Make sure every species has an Order
+if (any(is.na(model_data$Order))) {
+  warning(
+    "Missing Order for: ",
+    paste(
+      model_data$Species[is.na(model_data$Order)],
+      collapse = ", "
+    )
+  )
+}
+
+
+# Use identical factor ordering everywhere
+model_data$Order <- factor(
+  model_data$Order,
+  levels = order_levels
+)
 
 # ============================================================
-# Match the reduced dataset and tree
+# 3. Match ONE dataset to ONE phylogeny
 # ============================================================
 
 species_for_model <- intersect(
   tree_filtered$tip.label,
-  pgls_data$Species
+  model_data$Species
 )
 
-pgls_tree <- keep.tip(
+model_tree <- keep.tip(
   tree_filtered,
   species_for_model
 )
 
-pgls_data <- pgls_data %>%
-  filter(Species %in% pgls_tree$tip.label) %>%
-  arrange(match(Species, pgls_tree$tip.label))
+model_data <- model_data %>%
+  filter(Species %in% model_tree$tip.label) %>%
+  arrange(match(Species, model_tree$tip.label))
 
 
-# Confirm exact matching and ordering
 stopifnot(
   identical(
-    as.character(pgls_data$Species),
-    pgls_tree$tip.label
+    as.character(model_data$Species),
+    model_tree$tip.label
   )
 )
 
 
-# ============================================================
-# PIC analysis
-# ============================================================
-
-gene_trait <- setNames(
-  pgls_data$log_par_gene_count,
-  pgls_data$Species
-)
-
-parsize_trait <- setNames(
-  pgls_data$log_par_size,
-  pgls_data$Species
-)
-
-genePic <- pic(
-  gene_trait,
-  pgls_tree
-)
-
-parsizePic <- pic(
-  parsize_trait,
-  pgls_tree
-)
-
-
-picModel <- lm(
-  genePic ~ parsizePic - 1
-)
-
-summary(picModel)
+model_data <- as.data.frame(model_data)
+rownames(model_data) <- model_data$Species
 
 
 # ============================================================
+# x = PAR gene count
+# y = PAR size
+#
+# Color = Order
+# Shape:
+#   triangle = T2T
+#   circle   = Non-T2T
+# ============================================================
+
+
+# ============================================================
+# 4. RAW DATA MODELS
+# ============================================================
+
+
+# ----------------------------
+# Ordinary linear model
+# ----------------------------
+
+lm_raw <- lm(
+  par_size_Mb ~ par_gene_count,
+  data = model_data
+)
+
+summary(lm_raw)
+
+
+# ----------------------------
 # PGLS
-# ============================================================
+# ----------------------------
+library(phylolm)
 
-pgls_data <- as.data.frame(pgls_data)
-rownames(pgls_data) <- pgls_data$Species
-
-
-# Estimate Pagel's lambda
-lambda_cor <- corPagel(
+lambda_raw <- corPagel(
   value = 0.5,
-  phy = pgls_tree,
+  phy = model_tree,
   fixed = FALSE,
   form = ~ Species
 )
 
-pgls_fit <- gls(
-  log_par_gene_count ~ log_par_size,
-  data = pgls_data,
-  correlation = lambda_cor,
-  method = "ML"
+
+pgls_raw <- phylolm(
+  par_size_Mb ~ par_gene_count,
+  data = model_data,
+  phy = model_tree,
+  model = "lambda"
 )
 
-summary(pgls_fit)
-intervals(pgls_fit)
+summary(pgls_raw)
+
 
 
 # ============================================================
-# Fit model with lambda fixed at 1
+# 5. Add residuals
 # ============================================================
 
-lambda1_cor <- corPagel(
-  value = 1,
-  phy = pgls_tree,
-  fixed = TRUE,
-  form = ~ Species
+model_data$lm_raw_resid <- rstandard(
+  lm_raw
 )
 
-pgls_fit_lambda1 <- gls(
-  log_par_gene_count ~ log_par_size,
-  data = pgls_data,
-  correlation = lambda1_cor,
-  method = "ML"
+model_data$pgls_raw_resid <- residuals(
+  pgls_raw
+  )
+
+
+# ============================================================
+# 6. Common plotting aesthetics
+# ============================================================
+
+point_shapes <- c(
+  "Non-T2T" = 21,  # fillable circle
+  "T2T"     = 24   # fillable triangle
 )
 
-summary(pgls_fit_lambda1)
 
 
 # ============================================================
-# Plot reduced dataset
+# 7. Define Order levels from the ALL-MAMMAL dataset
 # ============================================================
 
-p_no_rodents <- ggplot(
-  pgls_data,
+mammal_order_levels <- model_data %>%
+  distinct(Order) %>%
+  filter(!is.na(Order)) %>%
+  arrange(Order) %>%
+  pull(Order) %>%
+  as.character()
+
+
+# ============================================================
+# 5. Set identical factor levels in both datasets
+# ============================================================
+
+model_data <- model_data %>%
+  mutate(
+    Order = factor(
+      Order,
+      levels = mammal_order_levels
+    )
+  )
+
+
+# ============================================================
+# 6. Color-blind-friendly Order colors
+# ============================================================
+
+mammal_order_colors <- setNames(
+  viridisLite::viridis(
+    length(mammal_order_levels),
+    option = "D",
+    begin = 0.05,
+    end = 0.95
+  ),
+  mammal_order_levels
+)
+
+
+# ============================================================
+# 7. Alternate filled/open circles
+# ============================================================
+
+mammal_order_shapes <- setNames(
+  rep(
+    c(16, 1),
+    length.out = length(mammal_order_levels)
+  ),
+  mammal_order_levels
+)
+
+
+
+mammal_order_fills <- mammal_order_colors
+
+# Every second Order is open
+mammal_order_fills[seq(2, length(mammal_order_fills), by = 2)] <- "white"
+
+# ============================================================
+# 8. Sanity checks
+# ============================================================
+
+table(model_data$Order, useNA = "ifany")
+
+
+# ============================================================
+# 8. RAW DATA -- ORDINARY LM
+# ============================================================
+
+p_lm_raw <- ggplot(
+  model_data,
   aes(
-    x = log_par_size,
-    y = log_par_gene_count,
-    label = Species
+    x = par_gene_count,
+    y = par_size_Mb
   )
 ) +
-  geom_point(size = 3) +
+  geom_point(
+    aes(
+      color = Order,
+      fill = Order,
+      shape = T2T_status
+    ),
+    size = 4,
+    stroke = 1.2
+  ) +
+
+  scale_color_manual(
+    values = mammal_order_colors,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_fill_manual(
+    values = mammal_order_fills,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
+  # LM line + 95% confidence ribbon
   geom_smooth(
     method = "lm",
     formula = y ~ x,
-    se = TRUE
+    se = TRUE,
+    color = "black"
   ) +
-  geom_text(
-    nudge_y = 0.05,
-    size = 3
+
+  geom_text_repel(
+    aes(label = Species),
+    size = 3,
+    color = "black",
+    show.legend = FALSE
   ) +
+
+  scale_color_manual(
+    values = mammal_order_colors,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
   labs(
-    x = "log(PAR size [Mb])",
-    y = "log(PAR gene count + 1)"
+    title = "Ordinary linear model",
+    x = "Number of genes in the PAR",
+    y = "PAR size (Mb)",
+    color = "Order",
+    shape = "Assembly"
   ) +
-  theme_bw()
-
-ggsave(
-  "PGLS.AllMammals.noRodents.logTransformed.png",
-  p_no_rodents
-)
 
 
-# ============================================================
-# Plot residuals
-# ============================================================
+  guides(
+    color = guide_legend(
+      override.aes = list(
+        size = 4,
+        shape = mammal_order_shapes
+      )
+    ),
+    shape = "none"
+  ) +
 
-# Use residuals from the estimated-lambda model.
-# Change pgls_fit to pgls_fit_lambda1 below if you specifically
-# want diagnostics for the lambda = 1 model.
+  theme_bw() +
 
-pgls_data$residual <- residuals(
-  pgls_fit,
-  type = "normalized"
-)
-
-pgls_data <- pgls_data %>%
-  mutate(
-    outlier = abs(residual) > 2
+  theme(
+    legend.position = "right",
+    legend.key.height = unit(0.45, "cm"),
+    legend.text = element_text(size = 8)
   )
 
 
-p_residuals <- ggplot(
-  pgls_data,
+
+
+
+
+# ============================================================
+# 9. RAW DATA -- PGLS
+# ============================================================
+
+# Add all-mammal PGLS residuals
+model_data$pgls_resid <- residuals(
+  pgls_raw
+)
+
+
+p_pgls_raw <- ggplot(
+  model_data,
   aes(
-    x = log_par_size,
-    y = residual
+    x = par_gene_count,
+    y = pgls_resid
   )
 ) +
+
   geom_hline(
     yintercept = 0,
-    linetype = "dashed"
+    linetype = "dashed",
+    color = "black",
+    linewidth = 0.7
   ) +
-  geom_hline(
-    yintercept = c(-2, 2),
-    linetype = "dotted"
-  ) +
-  geom_point(size = 3) +
-  geom_text_repel(
-    data = subset(
-      pgls_data,
-      abs(residual) > 2
+
+  geom_point(
+    aes(
+      color = Order,
+      fill = Order,
+      shape = T2T_status
     ),
+    size = 4,
+    stroke = 1.2
+  ) +
+
+  scale_color_manual(
+    values = mammal_order_colors,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_fill_manual(
+    values = mammal_order_fills,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
+  geom_text_repel(
     aes(label = Species),
-    size = 3
+    size = 3,
+    color = "black",
+    show.legend = FALSE
   ) +
+
+  scale_color_manual(
+    values = mammal_order_colors,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
   labs(
-    x = "log(PAR size [Mb])",
-    y = "Normalized PGLS residual"
+    title = paste0(
+      "PGLS residuals: All mammals; lambda = ",
+      round(pgls_raw$optpar, 2)
+    ),
+    x = "PAR size (Mb)",
+    y = "PGLS residual",
+    color = "Order",
+    shape = "Assembly"
   ) +
+
   theme_bw()
 
+
+
+# ============================================================
+# 16. Save plots
+# ============================================================
+
+# PNGs
+
 ggsave(
-  "PGLS.residuals.AllMammals.noRodents.logTransformed.png",
-  p_residuals
+  "LM.AllMammals.png",
+  p_lm_raw,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+ggsave(
+  "PGLS.AllMammals.png",
+  p_pgls_raw,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+
+# PDFs
+
+ggsave(
+  "LM.AllMammals.pdf",
+  p_lm_raw,
+  width = 8,
+  height = 6
+)
+
+ggsave(
+  "PGLS.AllMammals.pdf",
+  p_pgls_raw,
+  width = 8,
+  height = 6
+)
+
+
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+# ============================================================
+
+
+
+# ============================================================
+# Drop Primates and Rodentia
+# ============================================================
+
+model_data_reduced <- model_data %>%
+  filter(
+    !Order %in% c("Primates", "Rodentia")
+  )
+
+
+# ============================================================
+# Re-match reduced dataset to phylogeny
+# ============================================================
+
+species_for_model <- intersect(
+  tree_filtered$tip.label,
+  model_data_reduced$Species
+)
+
+model_tree_reduced <- keep.tip(
+  tree_filtered,
+  species_for_model
+)
+
+model_data_reduced <- model_data_reduced %>%
+  filter(Species %in% model_tree_reduced$tip.label) %>%
+  arrange(match(Species, model_tree_reduced$tip.label))
+
+stopifnot(
+  identical(
+    as.character(model_data_reduced$Species),
+    model_tree_reduced$tip.label
+  )
+)
+
+model_data_reduced <- as.data.frame(model_data_reduced)
+rownames(model_data_reduced) <- model_data_reduced$Species
+
+
+# ============================================================
+# RAW MODELS
+# ============================================================
+
+# Ordinary LM
+lm_raw_reduced <- lm(
+  par_size_Mb ~ par_gene_count,
+  data = model_data_reduced
+)
+
+summary(lm_raw_reduced)
+
+
+library(phylolm)
+# estimate λ with phylolm
+
+pgls_raw_reduced <- phylolm(
+  par_size_Mb ~ par_gene_count,
+  data = model_data_reduced,
+  phy = model_tree_reduced,
+  model = "lambda"
+)
+
+summary(pgls_raw_reduced)
+
+
+# ============================================================
+# Add residuals
+# ============================================================
+
+model_data_reduced$lm_raw_resid <- rstandard(
+  lm_raw_reduced
+)
+
+model_data_reduced$pgls_raw_resid <- residuals(
+  pgls_raw_reduced
+  )
+
+
+# ============================================================
+# 8. RAW DATA -- ORDINARY LM
+# ============================================================
+
+p_lm_reduced <- ggplot(
+  model_data_reduced,
+  aes(
+    x = par_gene_count,
+    y = par_size_Mb
+  )
+) +
+  geom_point(
+    aes(
+      color = Order,
+      fill = Order,
+      shape = T2T_status
+    ),
+    size = 4,
+    stroke = 1.2
+  ) +
+
+  scale_color_manual(
+    values = mammal_order_colors,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_fill_manual(
+    values = mammal_order_fills,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
+  # LM line + 95% confidence ribbon
+  geom_smooth(
+    method = "lm",
+    formula = y ~ x,
+    se = TRUE,
+    color = "black"
+  ) +
+
+  geom_text_repel(
+    aes(label = Species),
+    size = 3,
+    color = "black",
+    show.legend = FALSE
+  ) +
+
+  scale_color_manual(
+    values = mammal_order_colors,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
+  labs(
+    title = "Ordinary linear model",
+    x = "Number of genes in the PAR",
+    y = "PAR size (Mb)",
+    color = "Order",
+    shape = "Assembly"
+  ) +
+
+
+  guides(
+    color = guide_legend(
+      override.aes = list(
+        size = 4,
+        shape = mammal_order_shapes
+      )
+    ),
+    shape = "none"
+  ) +
+
+  theme_bw() +
+
+  theme(
+    legend.position = "right",
+    legend.key.height = unit(0.45, "cm"),
+    legend.text = element_text(size = 8)
+  )
+
+
+
+
+
+
+# ============================================================
+# 9. RAW DATA -- PGLS
+# ============================================================
+
+# Add all-mammal PGLS residuals
+model_data_reduced$pgls_resid <- residuals(
+  pgls_raw_reduced
+)
+
+
+p_pgls_reduced <- ggplot(
+  model_data_reduced,
+  aes(
+    x = par_gene_count,
+    y = pgls_resid
+  )
+) +
+
+  geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    color = "black",
+    linewidth = 0.7
+  ) +
+
+  geom_point(
+    aes(
+      color = Order,
+      fill = Order,
+      shape = T2T_status
+    ),
+    size = 4,
+    stroke = 1.2
+  ) +
+
+  scale_color_manual(
+    values = mammal_order_colors,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_fill_manual(
+    values = mammal_order_fills,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
+  geom_text_repel(
+    aes(label = Species),
+    size = 3,
+    color = "black",
+    show.legend = FALSE
+  ) +
+
+  scale_color_manual(
+    values = mammal_order_colors,
+    limits = mammal_order_levels,
+    drop = FALSE
+  ) +
+
+  scale_shape_manual(
+    values = point_shapes
+  ) +
+
+  labs(
+    title = paste0(
+      "PGLS residuals: All mammals; lambda = ",
+      round(pgls_raw$optpar, 2)
+    ),
+    x = "Number of genes in the PAR",
+    y = "PGLS residual",
+    color = "Order",
+    shape = "Assembly"
+  ) +
+
+  theme_bw()
+
+
+
+# ============================================================
+# 16. Save plots
+# ============================================================
+
+# PNGs
+
+ggsave(
+  "LM.SHROOM2_Mammals.png",
+  p_lm_reduced,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+ggsave(
+  "PGLS.SHROOM2_Mammals.png",
+  p_pgls_reduced,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+
+# PDFs
+
+ggsave(
+  "LM.SHROOM2_Mammals.pdf",
+  p_lm_reduced,
+  width = 8,
+  height = 6
+)
+
+ggsave(
+  "PGLS.SHROOM2_Mammals.pdf",
+  p_pgls_reduced,
+  width = 8,
+  height = 6
+)
+
+
+# ============================================================
+# Write model summaries to text files
+# ============================================================
+
+capture.output(
+  summary(lm_raw),
+  file = "LM.AllMammals.summary.txt"
+)
+
+capture.output(
+  summary(pgls_raw),
+  file = "PGLS.AllMammals.summary.txt"
+)
+
+capture.output(
+  summary(lm_raw_reduced),
+  file = "LM.ReducedMammals.summary.txt"
+)
+
+capture.output(
+  summary(pgls_raw_reduced),
+  file = "PGLS.ReducedMammals.summary.txt"
 )

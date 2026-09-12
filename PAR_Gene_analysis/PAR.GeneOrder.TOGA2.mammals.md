@@ -88,10 +88,11 @@ Urocitellus_parryii,CM099876:122998411-131433435
 Canis_lupus_baileyi,NC_132876:118611595-125236116
 Nyctalus_leisleri,OZ183628:0-1665649
 Dasypus_novemcinctus,NC_080704:0-9679476
-Artibeus_intermedius,CM076326:149640977-151570710
-Artibeus_lituratus,CM076392:0-981392
-Myotis_mystacinus,OZ075425.2:126527189-127971689
-Desmodus_rotundus,h1_SUPER_X:98077179-101544622
+Artibeus_intermedius,CM076326:147359214-151570710
+Artibeus_lituratus,CM076392:0-4918541
+Myotis_mystacinus,OZ075425:125458419-127971689
+Corynorhinus_townsendii,CM133721.1:0-1829836
+Miniopterus_schreibersii,OZ071095:103813303-106815783
 EOF
 
 
@@ -209,9 +210,66 @@ echo "Summary table:            $summary"
 ## PAR boundaries
 # Myotis_mystacanus,OZ075425.2:125458419-127971689 OR 126527189-127971689 (1.05 Mb between first and second window, windows are only 17-21kb)
 
+# Sort out Bat PAR boundaries
+## Artibeus_lituratus
+```
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_Gene_analysis/TOGA2_annotations/mammals/Bats
+
+awk 'BEGIN{OFS="\t"} $11>=10000 && ($10/$11)>0.90 {print $1,$3,$4}' \
+"Artibeus_lituratus_GCA_038363095.4_YtoX.aln.paf" \
+| sort -k1,1 -k2,2n \
+| bedtools merge -i - \
+> Artibeus_lituratus.X_gt90_10kb_merged.bed
+```
+## Artibeus_intermedius
+```
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_Gene_analysis/TOGA2_annotations/mammals/Bats
+
+awk 'BEGIN{OFS="\t"} $11>=10000 && ($10/$11)>0.90 {print $1,$3,$4}' \
+"Artibeus_intermedius_Y1toX.aln.paf" \
+| sort -k1,1 -k2,2n \
+| bedtools merge -i - \
+> Artibeus_intermedius.X_gt90_10kb_merged.bed
+```
+## Corynorhinus_townsendii,CM133721.1:0-1829836
+```
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_Gene_analysis/TOGA2_annotations/mammals/Bats
+
+awk 'BEGIN{OFS="\t"} $11>=10000 && ($10/$11)>0.90 {print $1,$3,$4}' \
+"Corynorhinus_townsendii_GCA_026230055.2_hap1_Y_to_GCA_026230055.2_hap1_X.aln.paf" \
+| sort -k1,1 -k2,2n \
+| bedtools merge -i - \
+> Corynorhinus_townsendii.X_gt90_10kb_merged.bed
+```
+## Miniopterus_schreibersii
+```
+cd /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/analyses/PAR_Gene_analysis/TOGA2_annotations/mammals/Bats
+
+awk 'BEGIN{OFS="\t"} $11>=10000 && ($10/$11)>0.90 {print $1,$3,$4}' \
+"Corynorhinus_townsendii_GCA_026230055.2_hap1_Y_to_GCA_026230055.2_hap1_X.aln.paf" \
+| sort -k1,1 -k2,2n \
+| bedtools merge -i - \
+> Corynorhinus_townsendii.X_gt90_10kb_merged.bed
+```
+## Nyctalus_leisleri
+```
+awk 'BEGIN{OFS="\t"} $11>=10000 && ($10/$11)>0.90 {print $1,$3,$4}' \
+"Nyctalus_leisleri_YtoX.aln.paf" \
+| sort -k1,1 -k2,2n \
+| bedtools merge -i - \
+> Nyctalus_leisleri.X_gt90_10kb_merged.bed
+```
+## Myotis_mystacinus 
+```
+awk 'BEGIN{OFS="\t"} $11>=10000 && ($10/$11)>0.90 {print $1,$3,$4}' \
+"Myotis_mystacinus_GCA_964094495.3_hap1_Y_to_GCA_964094495.3_hap1_X.aln.paf" \
+| sort -k1,1 -k2,2n \
+| bedtools merge -i - \
+> Myotis_mystacinus.X_gt90_10kb_merged.bed
+```
 
 cat > PAR.species_chr_region.txt <<'EOF'
-Artibeus_lituratus,CM076392:0-981392
+Artibeus_lituratus,CM076392:0-4918541
 Balaenoptera_physalus,OZ239531:0-7257636
 Bos_taurus,NC_040105:0-6843483
 Callithrix_jacchus,CM111807:0-1757279
@@ -224,34 +282,34 @@ Homo_sapiens,NC_060947:0-2394410
 Inia_geoffrensis,CM070920:0-7142434
 Loxodonta_africana,CM057446:0-10314587
 Lycaon_pictus,CM082710:0-6575129
-Macaca_nemestrina,NC_092145:158114029-159757195 
+Macaca_nemestrina,NC_092145:158114029-159757195
 Manis_pentadactyla,NC_080038:0-5004179
-Marmota_flaviventris,NC_092518:0-10556221 
+Marmota_flaviventris,NC_092518:0-10556221
 Meles_meles,OV277448:0-6399546
 Mesoplodon_bidens,OZ073217:135117924-142816029
 Molossus_nigricans,CM078089:0-4370896
 Mustela_nivalis_vulgaris,CM169857:131948904-138477583
-Myotis_mystacinus,OZ075425:126527189-127971689
+Myotis_mystacinus,OZ075425:125458419-127971689
 Myotis_nattereri,OZ125678:0-2687171
 Ovis_aries,CP162266:0-7021881
 Ovis_canadensis,NC_091727:0-7072606
-Pan_paniscus,CM055495:0-2524164 
-Pan_troglodytes,CM054457:0-3170188 
+Pan_paniscus,CM055495:0-2524164
+Pan_troglodytes,CM054457:0-3170188
 Panthera_onca,CM102116:122788602-130846311
 Pongo_abelii,NC_072008:0-2382235
 Pongo_pygmaeus,CM054653:0-2356740
-Pseudorca_crassidens,NC_090317:127639906-136059651 
+Pseudorca_crassidens,NC_090317:127639906-136059651
 Rhynchocyon_petersi,CM091802:0-20182068
 Rhynchonycteris_naso,CM073052:138579092-142670400
-Symphalangus_syndactylus,NC_072447:0-16738677
+Symphalangus_syndactylus,NC_072447:0-16994066
 Trichechus_inunguis,CM102173:0-9624845
 Urocitellus_parryii,CM099876:122998411-131433435
-Artibeus_intermedius,CM076326:149640977-151570710
-Corynorhinus_townsendii,CM133721.1:0-1829836
-Miniopterus_schreibersii,NC_071400:103813303-106815783
+Artibeus_intermedius,CM076326:147359214-151570710
+Miniopterus_schreibersii,OZ071095:103813303-106815783
 Canis_lupus_baileyi,NC_132876:118611595-125236116
 Nyctalus_leisleri,OZ183628:0-1665649
 Dasypus_novemcinctus,NC_080704:0-9679476
+Corynorhinus_townsendii,CM133721.1:0-1829836
 EOF
 
 # analyze separately -- rodents
@@ -262,14 +320,9 @@ EOF
 
 # Removed -- no PAR
 Nyctalus_leisleri,OZ183628.2:117626146-117723036
-Myotis_mystacinus,OZ075425:127971684-127971689  # made up regions for plotting...
 Thomomys_bottae,CM063048:0-5
 Ochotona_princeps,NC_080865:0-94380
-
 Alt: Ochotona_princeps	107724012-END
-
-# Should we remove: PAR not well assembled?
-Artibeus lituratus
 
 # Compute proportion of inferred PAR actually covered by alignments:
 Rscript PAR_proportion_aligned.mammals.R
@@ -281,49 +334,6 @@ chmod +x find_par_genes_toga.awk
 
 awk -F',' '{print $1}' PAR.species_chr_region.txt > species.txt
 
-cat > species.txt <<'EOF'
-Artibeus_lituratus
-Myotis_mystacinus
-Lycaon_pictus
-Bos_taurus
-Panthera_onca
-Molossus_nigricans
-Eubalaena_glacialis
-Macaca_nemestrina
-Callithrix_jacchus
-Mesoplodon_bidensfvg
-Inia_geoffrensis
-Camelus_dromedarius
-Ovis_canadensis
-Manis_pentadactyla
-Pan_paniscus
-Marmota_flaviventris
-Balaenoptera_physalus
-Pan_troglodytes
-Rhynchonycteris_naso
-Ovis_aries
-Trichechus_inunguis
-Pseudorca_crassidens
-Myotis_nattereri
-Rhynchocyon_petersi
-Grampus_griseus
-Mustela_nivalis_vulgaris
-Capra_hircus
-Loxodonta_africana
-Urocitellus_parryii
-Meles_meles
-Homo_sapiens
-Pongo_pygmaeus
-Symphalangus_syndactylus
-Gorilla_gorilla
-Pongo_abelii
-Microtus_pennsylvanicus
-Thomomys_bottae
-Ochotona_princeps
-Myotis_mystacinus
-Myotis_nattereri
-Nyctalus_leisleri
-EOF
 
 while read -r species; do
   echo $species
@@ -439,6 +449,8 @@ $1 == par_chrom && $3 == "gene" {
 ' "$gff" > "$out"
 
 
+# Combine all PAR gene files
+
 sort -u mammals_PAR_genes.chrX.tsv > mammals_PAR_genes.chrX.tsv.tmp
 mv mammals_PAR_genes.chrX.tsv.tmp mammals_PAR_genes.chrX.tsv
 
@@ -456,7 +468,8 @@ while read -r species; do
   grep $species mammals_PAR_genes.all.tsv | wc -l
 done < species.txt
 
-# nothing for either Corynorhinus_townsendii nor Miniopterus_schreibersii
+# Remove Desmodus_rotundus,h1_SUPER_X:98077179-101544622 because the TOGA2 annotations were done on an unpublished version made by Michael Hiller
+
 ```
 # Plot
 ```
@@ -576,7 +589,9 @@ mv mammals_PAR_genes.all.ZNF_arrays.edited.tsv mammals_PAR_genes.all.ZNF_arrays.
 
 # Rscript plot_combined.mammals.geneoriented.XG_and_SHROOM2.R 
 
-Rscript plot_combined_mammals.geneoriented.XG_and_SHROOM2.conserved_genes.R
+# Rscript plot_combined_mammals.geneoriented.XG_and_SHROOM2.conserved_genes.R
+
+Rscript PAR_GeneOrder_Mammals.August2026.R
 
 # Compute LOC freq
 

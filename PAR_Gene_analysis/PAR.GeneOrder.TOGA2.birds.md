@@ -151,6 +151,7 @@ Strix_aluco # swap to CM062916.1 from NC_133971.1
 # Excluding Colius_striatus,NC_084790:0-1458428: inferred PAR is neo-sex. Likely PAR loss but no short read data to confirm it
 # Excluding Falco_naumanni,NC_054080:0-813326: Can't confirm PAR side... dig more into later
 
+
 ## PAR boundaries with 98.5 PID and 10kb limits
 cat > PAR.species_chr_region.txt <<'EOF'
 Colius_striatus,NC_084790:89023853-89023854
@@ -402,6 +403,10 @@ cp birds_PAR_genes.all.tsv birds_PAR_genes.all.tsv.save
 
 grep -v 'LOC' birds_PAR_genes.all.tsv | grep -v 'LINC' > birds_PAR_genes.all.tsv.noLOC
 mv birds_PAR_genes.all.tsv.noLOC birds_PAR_genes.all.tsv
+
+# fix Amazona_ochrocephala naming in nwk file
+
+sed 's/Amazona_ochrocephala_/Amazona_ochrocephala/g' /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.nwk > /data/Wilson_Lab/projects/VGP_Phase_1_Sex_Chr_Project/jacksondan/referencelists/roadies_v1.1.16b.numbers.scientific.edited.nwk 
 
 Rscript PAR_GeneOrder_Birds.August2026.R
 
