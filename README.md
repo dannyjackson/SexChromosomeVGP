@@ -1,19 +1,14 @@
 # README for SexChromosomeVGP Repository
 
 *Created: December 3rd, 2025* <br>
-*Last edited: December 3rd, 2025*
+*Last edited: September 13th, 2026*
 
-The scripts and code in this repository are used to analyze broad patterns across the vertebrate tree of life in sex chromosome evolution. These efforts are part of a broader collaboration led by Drs. Simone Gabel and Melissa Wilson.
+The scripts and code in this repository are used to analyze the evolutionary patterns of the ancestral pseudoautosomal region in birds and eutherian mammals using the VGP phase 1 dataset.
 
 ## The specific analyses that I performed are:
-1. Plotting pseudoautosomal lengths by species across clades of interest (subrepo [PAR_phylogeny](https://github.com/dannyjackson/SexChromosomeVGP/PAR_phylogeny))
-2. Identifying genes at the PAR boundaries in each taxa (subrepo [PAR_genes](https://github.com/dannyjackson/SexChromosomeVGP/PAR_genes))
 
-## NOTE BEFORE PUBLICATION:
-These VGP genomes are occasionally being updated with new releases. Vance and I may pull more recent versions into the genome repository. If we do, we update the two sheets pasted below. Prior to publication, confirm that all analyses were run *after* the latest date of change of the raw genomes. Rerun analyses using updated versions for updated genomes.
-
-```
-https://docs.google.com/spreadsheets/d/1v35JQltKqIlEwD857GCAnmEJfMp1xbGBpT1f0oDFUuU/edit?usp=sharing
-
-/data/Wilson_Lab/data/Assembly_species_accession_change_date.csv
-```
+0. Curating the dataset
+1. Identifying misassembly errors in the ancestral PAR (subrepo [0_Curate_Dataset](https://github.com/dannyjackson/SexChromosomeVGP/0_Curate_Dataset))
+2. Analyzing the gene content of the PARs (subrepo [1_PAR_issues](https://github.com/dannyjackson/SexChromosomeVGP/1_PAR_issues))
+3. Analyzing the relationship between gene count and size of the PAR (subrepo [3_PAR_repeats](https://github.com/dannyjackson/SexChromosomeVGP/3_PAR_repeats))
+4. Analyzing the frequency of uncharacterized gene annotations in NCBI gffs [4_PAR_LOC_freq_NCBI](https://github.com/dannyjackson/SexChromosomeVGP/4_PAR_LOC_freq_NCBI)
