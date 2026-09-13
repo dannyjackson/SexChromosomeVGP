@@ -1,0 +1,233 @@
+{
+  "main": {
+    "id": "95cba2412c5a8c16",
+    "type": "split",
+    "children": [
+      {
+        "id": "82160517dad93e74",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "bd9b5399bd193e5f",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e27c124470f43016",
+    "type": "split",
+    "children": [
+      {
+        "id": "87d23a05aa29b8ab",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d339d848ca338b92",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "4d4fa38ea2cfb193",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "ddab86caeb206637",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "7cca8897e2048051",
+    "type": "split",
+    "children": [
+      {
+        "id": "49706470aced7f34",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "714a5c204be71cbb",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "7d3910993ed144ae",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "8e9f15dd4948466a",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "2a8cefcdddac9aba",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "6cf81d34317aa878",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "bd9b5399bd193e5f",
+  "lastOpenFiles": [
+    "X_Not_Included/PAR_gene_analysis/plot_combined.mammals.geneoriented.XG_and_SHROOM2.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined_mammals.geneoriented.XG_and_SHROOM2.conserved_genes.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined.mammals.geneoriented.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined.birds.geneoriented.invPasser_domesticus.invPoecile_atricapilus.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined.mammals.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined.birds.geneoriented.invPasser_domesticus.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined.birds.geneoriented.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined.birds.arrays.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined.birds.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined.allgenelabels.mammals.R",
+    "X_Not_Included/PAR_gene_analysis/plot_combined.allgenelabels.mammals.GeneArrays.R",
+    "X_Not_Included/PAR_gene_analysis/PAR.GeneOrder.TOGA2integrated.mammals.md",
+    "X_Not_Included/PAR_gene_analysis/PAR.GeneOrder.TOGA2integrated.birds.md",
+    "3_PAR_gene_analysis/PAR_gene_analysis/PAR.GeneOrder.TOGA2integrated.mammals.md",
+    "3_PAR_gene_analysis/PAR_gene_analysis/PAR.GeneOrder.TOGA2integrated.birds.md",
+    "2_PAR_issues/Zonotrichia_albicollis.md",
+    "2_PAR_issues/Willisornis_vidua.md",
+    "2_PAR_issues/Poecile_atricapillus.md",
+    "2_PAR_issues/Passer_domesticus.shortreads.md",
+    "2_PAR_issues/Passer_domesticus.old.md",
+    "2_PAR_issues/Passer_domesticus.md",
+    "2_PAR_issues/Haemorhous_mexicanus.md",
+    "2_PAR_issues/Guaruba_guarouba.md",
+    "2_PAR_issues/Amazona_ochrocephala.md",
+    "2_PAR_issues/2_PAR_Misassembly_blast.Mammals.md",
+    "3_PAR_gene_analysis/Not_included/PAR.GeneOrder.TOGA2integrated.mammals.md",
+    "3_PAR_gene_analysis/Not_included/PAR.GeneOrder.TOGA2integrated.birds.md",
+    "3_PAR_gene_analysis/3_PAR.GeneOrder.TOGA2.birds.md",
+    "3_PAR_gene_analysis/2_PAR.GeneOrder.TOGA2.mammals.md",
+    "3_PAR_gene_analysis/1_Telomere_detection.md",
+    "3_PAR_gene_analysis/0_Download TOGA2 annotations.md",
+    "X_Not_Included/U_PAR_phylogeny/0_PAR_length_by_species.md",
+    "X_Not_Included/U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/Z_repeats_bar.png",
+    "X_Not_Included/U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/Z_TE_depletion_FDR_50kb.png",
+    "X_Not_Included/U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/Z_TE_density_50kb.png",
+    "X_Not_Included/U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/W_TE_depletion_FDR_50kb.png",
+    "X_Not_Included/U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/W_TE_density_50kb.png",
+    "X_Not_Included/U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/Calonectris_borealis_Z_TE_density_50kb.png",
+    "X_Not_Included/U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/W.TE.png",
+    "X_Not_Included/U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/Calonectris_borealis_Z_TE_density_500kb.png",
+    "X_Not_Included/U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/Calonectris_borealis_Z_TE_density_1000kb.png",
+    "X_Not_Included/U_PAR_inference/Sequence_assembly_methods/Sequence_assembly_dropout.md",
+    "X_Not_Included/U_PAR_inference/X_alignment.testing.md",
+    "X_Not_Included/U_PAR_inference/Spot checking PARs.md",
+    "X_Not_Included/U_PAR_inference/GoodSeqTechPars.md",
+    "U_PAR_inference/OldScripts/Calonectris_borealis_TE_inference/W.TE.png"
+  ]
+}
