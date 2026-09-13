@@ -169,3 +169,88 @@ mkdir -p sorted_bam_files
 samtools sort "bam_files/${run}.bam" -o "sorted_bam_files/${run}.sorted.bam"
 
 samtools index "sorted_bam_files/${run}.sorted.bam"
+```
+
+### make a plot of overlapping reads between the two PARs
+```
+library(Rsamtools)
+library(GenomicAlignments)
+library(ggplot2)
+
+bam <- "Poecile_atricapillus.hifi_vs_hap1.bam"
+
+which <- GRanges(
+  "NC_081289.1",
+  IRanges(143380000, 143410000)
+)
+
+param <- ScanBamParam(
+  which = which,
+  what = c("qname", "flag", "mapq", "cigar", "pos")
+)
+
+x <- scanBam(bam, param = param)[[1]]
+
+df <- data.frame(
+  read = x$qname,
+  flag = x$flag,
+  mapq = x$mapq,
+  cigar = x$cigar,
+  start = x$pos
+)
+
+cigar_ref_width <- function(cigar) {
+  cigarWidthAlongReferenceSpace(cigar)
+}
+
+df$end <- df$start + cigar_ref_width(df$cigar) - 1
+
+df$secondary <- bitwAnd(df$flag, 256) != 0
+df$supplementary <- bitwAnd(df$flag, 2048) != 0
+df$reverse <- bitwAnd(df$flag, 16) != 0
+
+df_primary <- subset(df, !secondary & !supplementary)
+
+df_primary <- df_primary[order(df_primary$start), ]
+df_primary$y <- seq_len(nrow(df_primary))
+
+p <- ggplot(df_primary) +
+  geom_segment(
+    aes(
+      x = start,
+      xend = end,
+      y = y,
+      yend = y,
+      color = mapq
+    ),
+    linewidth = 1.5
+  ) +
+  geom_vline(
+    xintercept = 143407603,
+    linetype = "dashed",
+    linewidth = 0.7,
+    color = "#8a65b9"
+  ) +
+  coord_cartesian(xlim = c(143380000, 143410000)) +
+  scale_x_continuous(labels = scales::comma) +
+  labs(
+    x = "NC_087512.1 position (bp)",
+    y = "HiFi read",
+    color = "MAPQ",
+    title = "PacBio HiFi alignments across NC_087512.1:650-700 kb"
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+ggsave("PAR_nonPAR_boundary.telomeric.pdf", p,
+  width = 7,
+  height = 7)
+
+ggsave("PAR_nonPAR_boundary.telomeric.png", p,
+  width = 7,
+  height = 7)
+
+```

@@ -183,6 +183,7 @@
   },
   "active": "bd9b5399bd193e5f",
   "lastOpenFiles": [
+    "3_PAR_repeats/1d_anova.R",
     "X_Not_Included/0_Curate_Dataset/liftover.sh",
     "X_Not_Included/0_Curate_Dataset/liftover.squamates.VGP.useDB.sh",
     "X_Not_Included/0_Curate_Dataset/liftover.squamates.nonVGP.useDB.sh",
@@ -199,7 +200,6 @@
     "0_Curate_Dataset/0_Curate_Dataset",
     "0_Curate_Dataset/download_vgp_array.sh",
     "0_Curate_Dataset/download_vgp_array.troubleshoot.sh",
-    "0_Curate_Dataset/make_latest_gca_gcf_csv.sh",
     "0_Curate_Dataset/0_Download_VGP_phase1_genomes.md",
     "0_Curate_Dataset/Not_included/Download_squamate_nonVGP.md",
     "3_PAR_repeats/0_PAR_repeats_outlier_plots.md",
