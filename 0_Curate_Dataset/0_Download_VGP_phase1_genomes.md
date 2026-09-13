@@ -94,9 +94,9 @@ Hypanus_sabinus,GCF_030144855.1,
 Lepisosteus_oculatus,GCF_040954835.1,
 Acridotheres_tristis,,GCA_027559615.1
 Zootoca_vivipara,GCF_963506605.1,
+Anniella_stebbinsi,GCA_051312515.2,
 ```
 Then run the following:
-(do this also using Anniella_stebbinsi,GCA_051312515.2)
 ```
 chmod +x download_vgp_array.troubleshoot.sh
 ./download_vgp_array.troubleshoot.sh
@@ -422,70 +422,4 @@ sed -i 's/chromosome 12/chromosome X/g' rna.fna
 
 # Confirm that no instances of chromosome 12 remain in any file
 grep 'chromosome 12' *
-```
-# Lift over annotations for western chrous frog
-**Same family annotations:**
-- Dendropsophus ebraccatus GCF_027789765.1
-- Hyla sarda GCF_029499605.1
-- Use Hyla sarda (Hifiasm, hi-C phasing); Dendropsophus was CLR
-
-```
-minimap2 -d Pseudacris_triseriata.fna.mmi Pseudacris_triseriata.fna
-```
-
-```
-#!/bin/bash
-
-cd /data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Pseudacris_triseriata
-
-source myconda
-mamba activate lifton
-
-FNA_REF=/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Hyla_sarda/ncbi_dataset/data/GCF_029499605.1/GCF_029499605.1_aHylSar1.hap1_genomic.fna
-
-GFF_REF=/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Hyla_sarda/ncbi_dataset/data/GCF_029499605.1/genomic.gff
-
-FAA_REF=/data/Wilson_Lab/data/VGP_genomes_phase1/genomes/Hyla_sarda/ncbi_dataset/data/GCF_029499605.1/protein.faa
-
-GFF_QRY=/data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Pseudacris_triseriata/Pseudacris_triseriata.lifton.REF_Hyla_sarda.SC_0_5.gff
-
-FNA_QRY=/data/Wilson_Lab/data/VGP_genomes_phase1/symlinks/Pseudacris_triseriata/Pseudacris_triseriata.fna
-
-SC=0.5
-
-lifton \
-    -g ${GFF_REF} \
-    -o ${GFF_QRY} \
-    -P ${FAA_REF} \
-    -t 16 \
-    -sc ${SC} \
-    ${FNA_QRY} \
-    ${FNA_REF}
-```
-
-```
-sbatch \
-  -c 16 \
-  -t 5:00:00 \
-  --mem-per-cpu=24G \
-  --mail-user=jacksondan@nih.gov \
-  --mail-type=ALL \
-  --output=slurm_output/lifton_anuran.%j \
-  submit_lifton.sh 
-  ```
-
-
-
-
-
-
-
-# NOT DOING THIS ANYMORE
-### Download alternate haplotypes 
-```
-cd /data/Wilson_Lab/data/VGP_genomes_phase1/Alternate_Haplotypes
-
-ACCESSION_LIST="/data/Wilson_Lab/data/VGP_genomes_phase1/reference_lists/VGP_Phase1_Alternate_Haplotype_Accessions.csv"
-N=$(( $(wc -l < "$ACCESSION_LIST") - 1 ))
-sbatch --array=1-"$N"%25 download_vgp_array.althap.sh
 ```
